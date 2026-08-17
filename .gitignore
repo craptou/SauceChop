@@ -1,0 +1,73 @@
+# CMake and build trees
+/build/
+/out/
+/cmake-build-*/
+CMakeUserPresets.json
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+
+# Visual Studio and MSVC
+.vs/
+*.sln.docstates
+*.user
+*.suo
+*.VC.db
+*.VC.opendb
+*.obj
+*.pch
+*.pdb
+*.ilk
+*.idb
+*.ipdb
+*.iobj
+*.tlog
+*.lastbuildstate
+
+# Compiled plug-ins and applications
+*.vst3
+*.dll
+*.exe
+*.lib
+*.exp
+*.app
+*.dSYM/
+
+# JUCE/Projucer generated files
+JuceLibraryCode/
+*.jucer.user
+
+# Editors and operating systems
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Tests, profiling and coverage outputs
+/Testing/
+/test-results/
+/coverage/
+*.profraw
+*.profdata
+
+# Runtime logs, caches and temporary renders
+*.log
+*.tmp
+*.temp
+*.bak
+/renders/
+/temp/
+/cache/
+
+# Local environment and signing material
+.env
+.env.*
+!.env.example
+*.pfx
+*.p12
+*.key
+*.pem
+*.cer
+*.crt
