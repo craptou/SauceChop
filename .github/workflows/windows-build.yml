@@ -1,0 +1,30 @@
+name: Windows build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-test:
+    runs-on: windows-2022
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: cmake --preset windows-vs2022
+
+      - name: Build Debug
+        run: cmake --build --preset debug --parallel 2
+
+      - name: Run tests
+        run: ctest --preset debug

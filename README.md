@@ -29,6 +29,26 @@ Le time-stretch avec conservation de hauteur, les formants et l'export par gliss
 - Windows 11 comme plateforme de développement initiale
 - FL Studio et pluginval pour la validation
 
+## Build rapide
+
+Après un clone incluant les sous-modules :
+
+```powershell
+git submodule update --init --recursive
+cmake --preset windows-vs2022
+cmake --build --preset debug --parallel
+ctest --preset debug
+```
+
+Le preset Windows place les artefacts dans `C:\SauceChopBuild\windows-vs2022`. Ce chemin ASCII évite un problème de génération des ressources JUCE lorsque le chemin du dépôt contient des caractères accentués.
+
+Artefacts Debug :
+
+```text
+C:\SauceChopBuild\windows-vs2022\SauceChop_artefacts\Debug\VST3\SauceChop.vst3
+C:\SauceChopBuild\windows-vs2022\SauceChop_artefacts\Debug\Standalone\SauceChop.exe
+```
+
 ## Documentation
 
 | Document | Contenu |
@@ -59,4 +79,4 @@ Le time-stretch avec conservation de hauteur, les formants et l'export par gliss
 
 ## Statut
 
-Phase de cadrage. Aucun moteur audio n'est encore implémenté.
+Jalon M1 en cours : le squelette VST3/Standalone compile, l'interface minimale s'ouvre, les paramètres globaux sont persistants et le premier module de découpage égal est couvert par des tests. Le moteur reste volontairement silencieux avant l'import audio de M2.

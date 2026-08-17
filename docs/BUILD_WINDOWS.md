@@ -31,20 +31,33 @@ Ne pas suivre directement une branche mouvante dans une release. Toute mise à j
 
 ## Configuration CMake envisagée
 
-Depuis une invite PowerShell Developer ou un terminal où MSVC est accessible :
+Depuis PowerShell :
 
 ```powershell
-cmake -S . -B build -G "Visual Studio 17 2022" -A x64
-cmake --build build --config Debug --target SauceChop_VST3
+git submodule update --init --recursive
+cmake --preset windows-vs2022
+cmake --build --preset debug --parallel
+ctest --preset debug
 ```
 
 Pour une release locale :
 
 ```powershell
-cmake --build build --config Release --target SauceChop_VST3
+cmake --build --preset release --parallel
+ctest --preset release
 ```
 
-Les noms exacts de cibles seront confirmés dans `CMakeLists.txt`.
+Les cibles individuelles sont `SauceChop_VST3`, `SauceChop_Standalone` et `SauceChopTests`.
+
+### Chemin de build ASCII
+
+Le preset écrit dans :
+
+```text
+C:\SauceChopBuild\windows-vs2022
+```
+
+JUCE 8.0.15 peut échouer pendant la génération des ressources Windows lorsque le chemin de build contient des caractères accentués. Le dépôt actuel se trouve sous un nom utilisateur contenant `ë` ; le dossier externe ASCII évite ce problème sans déplacer les sources. Il peut être supprimé et entièrement régénéré depuis Git.
 
 ## Formats construits
 
@@ -56,6 +69,12 @@ Pendant le développement :
 Le Standalone n'est pas un livrable 1.0 tant qu'il n'est pas explicitement ajouté au périmètre produit.
 
 ## Installation locale
+
+Le VST3 Debug est produit ici :
+
+```text
+C:\SauceChopBuild\windows-vs2022\SauceChop_artefacts\Debug\VST3\SauceChop.vst3
+```
 
 Le chemin VST3 système habituel est :
 

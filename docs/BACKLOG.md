@@ -4,20 +4,20 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 
 ## EPIC-01 — Fondation
 
-- `DEV-001` Initialiser Git et ajouter un `.gitignore` C++/JUCE/Visual Studio.
+- `DEV-001` ✅ Initialiser Git et ajouter un `.gitignore` C++/JUCE/Visual Studio.
 - `DEV-002` Choisir la licence du dépôt et documenter la licence JUCE.
-- `DEV-003` Créer `CMakeLists.txt` avec JUCE et cibles VST3/Standalone.
-- `DEV-004` Ajouter les scripts/presets CMake de développement.
-- `DEV-005` Activer formatage C++ et avertissements du compilateur.
-- `DEV-006` Ajouter une CI Windows x64.
+- `DEV-003` ✅ Créer `CMakeLists.txt` avec JUCE et cibles VST3/Standalone.
+- `DEV-004` ✅ Ajouter les scripts/presets CMake de développement.
+- `DEV-005` ✅ Activer formatage C++ et avertissements du compilateur.
+- `DEV-006` ✅ Ajouter une CI Windows x64.
 - `DEV-007` Documenter la machine de benchmark.
 
 ## EPIC-02 — Host et état
 
-- `HOST-001` Créer le processeur instrument stéréo MIDI.
-- `HOST-002` Créer l'éditeur redimensionnable minimal.
-- `HOST-003` Définir les identifiants de paramètres VST stables.
-- `HOST-004` Implémenter le `ValueTree` versionné.
+- `HOST-001` ✅ Créer le processeur instrument stéréo MIDI.
+- `HOST-002` ✅ Créer l'éditeur redimensionnable minimal.
+- `HOST-003` ✅ Définir les identifiants de paramètres VST stables.
+- `HOST-004` ✅ Implémenter le premier `ValueTree` de paramètres.
 - `HOST-005` Ajouter le squelette de migration de schéma.
 - `HOST-006` Tester sauvegarde/rechargement dans FL Studio.
 
@@ -35,7 +35,7 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 
 - `UI-001` Construire un cache min/max de waveform.
 - `UI-002` Dessiner la forme d'onde multirésolution.
-- `SLICE-001` Calculer 4/8/16/32 frontières égales.
+- `SLICE-001` ✅ Calculer 4/8/16/32 frontières égales.
 - `SLICE-002` Afficher limites, numéros et sélection.
 - `SLICE-003` Implémenter la bande d'ordre.
 - `SLICE-004` Implémenter le drag-reorder avec prévisualisation.
@@ -110,4 +110,3 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 ## Priorité immédiate
 
 Ordre recommandé pour les premières issues : `DEV-001`, `DEV-002`, `DEV-003`, `HOST-001`, `HOST-002`, `HOST-006`, puis `FILE-001`.
-

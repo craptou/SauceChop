@@ -11,6 +11,13 @@ Les changements notables de SauceChop sont consignés dans ce fichier. Le format
 - architecture du plug-in et du moteur audio ;
 - roadmap, backlog, stratégie de tests et processus de release ;
 - conventions de contribution et gabarits Git.
+- sous-module JUCE fixé à la version 8.0.15 ;
+- projet CMake avec cibles VST3, Standalone et tests ;
+- processeur instrument MIDI stéréo silencieux et état de paramètres persistant ;
+- interface redimensionnable du premier jalon ;
+- calcul overflow-safe des slices égales et tests unitaires associés ;
+- presets CMake Windows avec dossier de build ASCII.
+- CI GitHub Actions pour compiler et tester sous Windows x64.
 
 ### Changed
 
