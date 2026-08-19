@@ -173,7 +173,7 @@ void SauceChopAudioProcessorEditor::filesDropped(const juce::StringArray& files,
 void SauceChopAudioProcessorEditor::chooseSample()
 {
     fileChooser = std::make_unique<juce::FileChooser>(
-        "Choose a sample", juce::File{}, "*.wav;*.aif;*.aiff");
+        "Choose a sample", juce::File{}, "*.wav;*.aif;*.aiff;*.mp3");
 
     const auto safeThis = juce::Component::SafePointer<SauceChopAudioProcessorEditor>{this};
     fileChooser->launchAsync(juce::FileBrowserComponent::openMode
@@ -199,7 +199,7 @@ void SauceChopAudioProcessorEditor::refreshSampleState()
     {
         case SauceChopAudioProcessor::SampleLoadState::empty:
             statusLabel.setText("Ready for a sample", juce::dontSendNotification);
-            sampleInfoLabel.setText("WAV or AIFF • mono or stereo • maximum 10 minutes",
+            sampleInfoLabel.setText("WAV, AIFF or MP3 • mono or stereo • maximum 10 minutes",
                                     juce::dontSendNotification);
             break;
 
@@ -241,5 +241,6 @@ void SauceChopAudioProcessorEditor::updateSliceCount()
 bool SauceChopAudioProcessorEditor::isSupportedAudioFile(const juce::String& path)
 {
     const auto extension = juce::File{path}.getFileExtension().toLowerCase();
-    return extension == ".wav" || extension == ".aif" || extension == ".aiff";
+    return extension == ".wav" || extension == ".aif" || extension == ".aiff"
+        || extension == ".mp3";
 }

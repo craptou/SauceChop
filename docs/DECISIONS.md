@@ -46,6 +46,12 @@ Les décisions acceptées ne sont pas immuables, mais toute modification doit ex
 - **Motif** : restauration exacte, tests reproductibles et expérience d'undo fiable.
 - **Conséquence** : graine et résultat doivent faire partie de l'état.
 
+### D-008 — Décodage MP3 natif sur Windows
+
+- **Statut** : accepté
+- **Motif** : JUCE enregistre déjà le codec Windows Media capable de lire le MP3 sur notre plateforme cible.
+- **Conséquence** : `JUCE_USE_MP3AUDIOFORMAT` reste désactivé afin de ne pas intégrer le décodeur logiciel accompagné d'un avertissement de propriété intellectuelle. Une édition Windows dépourvue des composants multimédias requis peut nécessiter l'installation des fonctionnalités média du système.
+
 ## Décisions ouvertes
 
 ### D-OPEN-001 — Disponibilité du nom SauceChop

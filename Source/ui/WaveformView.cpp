@@ -64,7 +64,7 @@ void WaveformView::drawPlaceholder(juce::Graphics& graphics,
     graphics.setColour(dropTargetActive ? juce::Colours::white : secondaryTextColour);
     graphics.setFont(16.0f);
     graphics.drawFittedText(dropTargetActive ? "Release to load this sample"
-                                             : "Drop a WAV or AIFF here",
+                                             : "Drop a WAV, AIFF or MP3 here",
                             bounds.toNearestInt(),
                             juce::Justification::centred,
                             1);

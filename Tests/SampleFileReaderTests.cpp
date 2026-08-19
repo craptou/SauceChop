@@ -99,6 +99,20 @@ public:
             expectWithinAbsoluteError(aiffResult.sample->originalSampleRateHz, 44'100.0, 0.01);
         }
 
+        beginTest("An MP3 is decoded through the native platform codec");
+        const auto mp3File = juce::File{SAUCECHOP_TEST_MP3_PATH};
+        expect(mp3File.existsAsFile());
+        const auto mp3Result = saucechop::decodeSampleFile(mp3File);
+        expect(mp3Result.succeeded(), mp3Result.errorMessage);
+
+        if (mp3Result.sample != nullptr)
+        {
+            expect(mp3Result.sample->channelCount == 1 || mp3Result.sample->channelCount == 2);
+            expect(mp3Result.sample->frameCount > 0);
+            expect(mp3Result.sample->originalSampleRateHz > 0.0);
+            expect(!mp3Result.sample->waveformPeaks.empty());
+        }
+
         beginTest("Unsupported extensions fail without decoding");
         TemporaryTestFile temporaryText{".txt"};
         expect(temporaryText.file.replaceWithText("not audio"));

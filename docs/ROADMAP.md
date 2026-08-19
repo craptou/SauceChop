@@ -29,7 +29,7 @@ Critère de sortie : 100 ouvertures/fermetures et 50 ajouts/suppressions sans cr
 
 ## M2 — Chargement et visualisation
 
-Résultat : un WAV/AIFF peut être chargé et affiché sans toucher au thread audio.
+Résultat : un WAV, AIFF ou MP3 peut être chargé et affiché sans toucher au thread audio.
 
 Statut : en cours. Le chargement, les limites, la publication transactionnelle et la waveform sont implémentés ; le hash complet, la relocalisation et le corpus étendu restent à faire.
 

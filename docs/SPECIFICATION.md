@@ -6,7 +6,7 @@ Les identifiants `FR-*` servent à relier exigences, issues et tests. La mention
 
 ### FR-001 — Importer un sample — MVP
 
-L'utilisateur peut charger un fichier WAV ou AIFF depuis un sélecteur ou par glisser-déposer sur le plug-in.
+L'utilisateur peut charger un fichier WAV, AIFF ou MP3 depuis un sélecteur ou par glisser-déposer sur le plug-in.
 
 Critères d'acceptation :
 
@@ -165,4 +165,3 @@ Le plug-in empêche NaN, infini et dépassements non bornés. Un limiteur n'est 
 - **NFR-004** : l'interface reste utilisable de 100 % à 200 % de mise à l'échelle Windows.
 - **NFR-005** : les actions longues montrent une progression et peuvent échouer sans bloquer le DAW.
 - **NFR-006** : les données du sample source restent immuables après import.
-

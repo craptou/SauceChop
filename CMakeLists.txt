@@ -118,7 +118,8 @@ if(SAUCECHOP_BUILD_TESTS)
 
     target_compile_definitions(SauceChopTests
         PRIVATE
-            JUCE_USE_CURL=0)
+            JUCE_USE_CURL=0
+            SAUCECHOP_TEST_MP3_PATH="${CMAKE_CURRENT_SOURCE_DIR}/external/JUCE/examples/Assets/Notifications/sounds/served.mp3")
 
     add_test(NAME SauceChop.UnitTests COMMAND SauceChopTests)
 endif()

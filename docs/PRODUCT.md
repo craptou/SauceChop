@@ -52,7 +52,7 @@ Ces pistes sont hors périmètre tant que les fonctions essentielles ne sont pas
 
 ### MVP
 
-- WAV et AIFF stéréo ou mono ;
+- WAV, AIFF et MP3 stéréo ou mono ;
 - sélection et réorganisation ;
 - gain, pitch par vitesse, reverse, fades ;
 - lecture MIDI en mode One Shot et Gate ;

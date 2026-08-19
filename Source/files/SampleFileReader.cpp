@@ -18,7 +18,8 @@ constexpr auto waveformBinCount = 2048;
 bool hasSupportedExtension(const juce::File& file)
 {
     const auto extension = file.getFileExtension().toLowerCase();
-    return extension == ".wav" || extension == ".aif" || extension == ".aiff";
+    return extension == ".wav" || extension == ".aif" || extension == ".aiff"
+        || extension == ".mp3";
 }
 } // namespace
 
@@ -37,7 +38,7 @@ SampleLoadResult decodeSampleFile(const juce::File& file,
         return {nullptr, "The selected audio file does not exist."};
 
     if (!hasSupportedExtension(file))
-        return {nullptr, "Unsupported audio format. Use WAV or AIFF."};
+        return {nullptr, "Unsupported audio format. Use WAV, AIFF, or MP3."};
 
     try
     {

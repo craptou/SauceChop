@@ -25,6 +25,7 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 
 - `FILE-001` ✅ Charger WAV mono/stéréo.
 - `FILE-002` ✅ Charger AIFF mono/stéréo.
+- `FILE-002B` ✅ Charger MP3 mono/stéréo via le codec natif de la plateforme.
 - `FILE-003` ✅ Appliquer les limites de taille/mémoire.
 - `FILE-004` Construire `SampleIdentity` et son hash.
 - `FILE-005` ✅ Publier un nouveau `SourceSample` sans bloquer l'audio.

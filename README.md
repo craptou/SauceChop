@@ -8,7 +8,7 @@ Le projet s'inspire de la catégorie des *sample choppers*, sans reprendre le co
 
 Construire d'abord un MVP stable capable de :
 
-- charger un fichier WAV ou AIFF ;
+- charger un fichier WAV, AIFF ou MP3 ;
 - afficher sa forme d'onde ;
 - créer 4, 8, 16 ou 32 slices égales ;
 - lire, sélectionner et réordonner les slices ;
@@ -81,4 +81,4 @@ Pour tester dans FL Studio, copier le bundle `SauceChop.vst3` dans `C:\Program F
 
 ## Statut
 
-Jalon M2 en cours : WAV/AIFF mono ou stéréo peuvent être chargés sans bloquer le thread audio, la waveform et ses divisions sont affichées, les erreurs sont non bloquantes et la référence du sample est restaurée avec la session. Le moteur reste volontairement silencieux jusqu'à la lecture des slices de M3.
+Jalon M2 en cours : WAV, AIFF et MP3 mono ou stéréo peuvent être chargés sans bloquer le thread audio, la waveform et ses divisions sont affichées, les erreurs sont non bloquantes et la référence du sample est restaurée avec la session. Le moteur reste volontairement silencieux jusqu'à la lecture des slices de M3.

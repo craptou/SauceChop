@@ -98,7 +98,7 @@ Taille initiale proposée : `1000 × 650 px` logiques.
 
 Exemples de formulations :
 
-- `Unsupported audio format. Use WAV or AIFF.`
+- `Unsupported audio format. Use WAV, AIFF, or MP3.`
 - `The source sample cannot be found. Relocate it to restore playback.`
 - `This file is too large to load safely.`
 - `Audio render failed. Your current pattern was not changed.`

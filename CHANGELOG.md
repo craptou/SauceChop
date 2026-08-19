@@ -24,7 +24,8 @@ Les changements notables de SauceChop sont consignés dans ce fichier. Le format
 - import par sélecteur de fichier ou glisser-déposer ;
 - affichage de la waveform, des informations du sample et des divisions 4/8/16/32 ;
 - restauration du chemin et de l'identité de base du sample avec l'état du plug-in ;
-- tests de décodage WAV/AIFF et de génération des pics.
+- tests de décodage WAV/AIFF/MP3 et de génération des pics.
+- import et décodage MP3 via le codec multimédia natif de Windows.
 
 ### Changed
 
