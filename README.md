@@ -49,6 +49,8 @@ C:\SauceChopBuild\windows-vs2022\SauceChop_artefacts\Debug\VST3\SauceChop.vst3
 C:\SauceChopBuild\windows-vs2022\SauceChop_artefacts\Debug\Standalone\SauceChop.exe
 ```
 
+Pour tester dans FL Studio, copier le bundle `SauceChop.vst3` dans `C:\Program Files\Common Files\VST3\`, puis lancer un scan depuis le gestionnaire de plug-ins.
+
 ## Documentation
 
 | Document | Contenu |
@@ -79,4 +81,4 @@ C:\SauceChopBuild\windows-vs2022\SauceChop_artefacts\Debug\Standalone\SauceChop.
 
 ## Statut
 
-Jalon M1 en cours : le squelette VST3/Standalone compile, l'interface minimale s'ouvre, les paramètres globaux sont persistants et le premier module de découpage égal est couvert par des tests. Le moteur reste volontairement silencieux avant l'import audio de M2.
+Jalon M2 en cours : WAV/AIFF mono ou stéréo peuvent être chargés sans bloquer le thread audio, la waveform et ses divisions sont affichées, les erreurs sont non bloquantes et la référence du sample est restaurée avec la session. Le moteur reste volontairement silencieux jusqu'à la lecture des slices de M3.

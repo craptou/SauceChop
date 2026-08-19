@@ -38,10 +38,20 @@ target_sources(SauceChop
     PRIVATE
         Source/PluginEditor.cpp
         Source/PluginEditor.h
+        Source/Parameters.h
         Source/PluginProcessor.cpp
         Source/PluginProcessor.h
+        Source/files/SampleLoader.cpp
+        Source/files/SampleLoader.h
+        Source/files/SampleFileReader.cpp
+        Source/files/SampleFileReader.h
+        Source/files/SourceSample.h
         Source/model/SliceMath.cpp
-        Source/model/SliceMath.h)
+        Source/model/SliceMath.h
+        Source/model/WaveformPeaks.cpp
+        Source/model/WaveformPeaks.h
+        Source/ui/WaveformView.cpp
+        Source/ui/WaveformView.h)
 
 target_compile_definitions(SauceChop
     PUBLIC
@@ -52,7 +62,9 @@ target_compile_definitions(SauceChop
 target_link_libraries(SauceChop
     PRIVATE
         juce::juce_audio_utils
+        juce::juce_audio_formats
         juce::juce_dsp
+        juce::juce_events
     PUBLIC
         juce::juce_recommended_config_flags
         juce::juce_recommended_warning_flags)
@@ -60,10 +72,20 @@ target_link_libraries(SauceChop
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     Source/PluginEditor.cpp
     Source/PluginEditor.h
+    Source/Parameters.h
     Source/PluginProcessor.cpp
     Source/PluginProcessor.h
+    Source/files/SampleLoader.cpp
+    Source/files/SampleLoader.h
+    Source/files/SampleFileReader.cpp
+    Source/files/SampleFileReader.h
+    Source/files/SourceSample.h
     Source/model/SliceMath.cpp
-    Source/model/SliceMath.h)
+    Source/model/SliceMath.h
+    Source/model/WaveformPeaks.cpp
+    Source/model/WaveformPeaks.h
+    Source/ui/WaveformView.cpp
+    Source/ui/WaveformView.h)
 
 if(SAUCECHOP_BUILD_TESTS)
     include(CTest)
@@ -74,13 +96,22 @@ if(SAUCECHOP_BUILD_TESTS)
     target_sources(SauceChopTests
         PRIVATE
             Tests/Main.cpp
+            Tests/SampleFileReaderTests.cpp
             Tests/SliceMathTests.cpp
+            Tests/WaveformPeaksTests.cpp
+            Source/files/SampleFileReader.cpp
+            Source/files/SampleFileReader.h
+            Source/files/SourceSample.h
             Source/model/SliceMath.cpp
-            Source/model/SliceMath.h)
+            Source/model/SliceMath.h
+            Source/model/WaveformPeaks.cpp
+            Source/model/WaveformPeaks.h)
 
     target_link_libraries(SauceChopTests
         PRIVATE
             juce::juce_core
+            juce::juce_audio_basics
+            juce::juce_audio_formats
         PUBLIC
             juce::juce_recommended_config_flags
             juce::juce_recommended_warning_flags)

@@ -23,18 +23,18 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 
 ## EPIC-03 — Import audio
 
-- `FILE-001` Charger WAV mono/stéréo.
-- `FILE-002` Charger AIFF mono/stéréo.
-- `FILE-003` Appliquer les limites de taille/mémoire.
+- `FILE-001` ✅ Charger WAV mono/stéréo.
+- `FILE-002` ✅ Charger AIFF mono/stéréo.
+- `FILE-003` ✅ Appliquer les limites de taille/mémoire.
 - `FILE-004` Construire `SampleIdentity` et son hash.
-- `FILE-005` Publier un nouveau `SourceSample` sans bloquer l'audio.
+- `FILE-005` ✅ Publier un nouveau `SourceSample` sans bloquer l'audio.
 - `FILE-006` Gérer fichier absent, modifié et relocalisé.
 - `FILE-007` Créer un corpus de fichiers de test.
 
 ## EPIC-04 — Forme d'onde et slices
 
-- `UI-001` Construire un cache min/max de waveform.
-- `UI-002` Dessiner la forme d'onde multirésolution.
+- `UI-001` ✅ Construire un cache min/max de waveform.
+- `UI-002` ✅ Dessiner la forme d'onde depuis un cache borné.
 - `SLICE-001` ✅ Calculer 4/8/16/32 frontières égales.
 - `SLICE-002` Afficher limites, numéros et sélection.
 - `SLICE-003` Implémenter la bande d'ordre.

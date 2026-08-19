@@ -91,6 +91,16 @@ Dans FL Studio :
 3. vérifier que SauceChop apparaît comme générateur/instrument ;
 4. ouvrir l'interface et enregistrer un projet de test.
 
+Pour une installation manuelle du build Debug :
+
+```powershell
+$source = 'C:\SauceChopBuild\windows-vs2022\SauceChop_artefacts\Debug\VST3\SauceChop.vst3'
+$destination = 'C:\Program Files\Common Files\VST3\SauceChop.vst3'
+Copy-Item -LiteralPath $source -Destination $destination -Recurse
+```
+
+Ne pas exécuter cette commande si la destination existe déjà : supprimer ou remplacer une installation doit rester une action explicite.
+
 ## Configurations
 
 - **Debug** : assertions, symboles, protections et logs locaux ; peut être trop lente pour juger le DSP avancé.

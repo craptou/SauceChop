@@ -18,6 +18,13 @@ Les changements notables de SauceChop sont consignés dans ce fichier. Le format
 - calcul overflow-safe des slices égales et tests unitaires associés ;
 - presets CMake Windows avec dossier de build ASCII.
 - CI GitHub Actions pour compiler et tester sous Windows x64.
+- chargement asynchrone des samples WAV et AIFF mono/stéréo ;
+- limites de sécurité de 10 minutes et 1 GiB décodé ;
+- cache de pics de waveform calculé hors du thread audio ;
+- import par sélecteur de fichier ou glisser-déposer ;
+- affichage de la waveform, des informations du sample et des divisions 4/8/16/32 ;
+- restauration du chemin et de l'identité de base du sample avec l'état du plug-in ;
+- tests de décodage WAV/AIFF et de génération des pics.
 
 ### Changed
 
