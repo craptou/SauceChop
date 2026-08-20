@@ -50,8 +50,9 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     void loadSampleAsync(const juce::File& file);
-    void startPlayback() noexcept;
-    void stopPlayback() noexcept;
+    void startPlayback();
+    void stopPlayback();
+    void synchronisePlaybackControl();
     void setSequenceSliceCount(int sliceCount);
     void moveSequenceStep(int fromIndex, int toIndex);
     void resetSequenceOrder();
@@ -127,10 +128,12 @@ private:
     void reclaimRetiredSamples();
     void setSequenceOrder(std::vector<int> order, bool notifyListeners);
     void publishSequenceOrderLocked();
+    void setPreviewPlayParameter(bool shouldPlay);
 
     juce::AudioProcessorValueTreeState parameterState;
     const std::atomic<float>* outputGainParameter = nullptr;
     const std::atomic<float>* sliceCountParameter = nullptr;
+    const std::atomic<float>* previewPlayParameter = nullptr;
 
     std::atomic<const saucechop::SourceSample*> realtimeSourceSample{nullptr};
     std::atomic<const saucechop::SourceSample*> realtimeSampleHazard{nullptr};
@@ -144,6 +147,7 @@ private:
     std::uint64_t consumedPlaybackCommandSequence = 0;
     std::atomic<bool> playbackRequested{false};
     std::atomic<bool> audioIsPlaying{false};
+    bool audioPreviewPlayState = false;
     std::atomic<float> playbackProgress{0.0f};
     std::atomic<float> playbackSequenceProgress{0.0f};
     std::atomic<int> playbackSlice{-1};

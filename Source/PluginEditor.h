@@ -54,6 +54,7 @@ private:
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
     std::unique_ptr<SliderAttachment> outputGainAttachment;
     std::unique_ptr<ComboBoxAttachment> sliceCountAttachment;
+    double playbackRequestStartMilliseconds = 0.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SauceChopAudioProcessorEditor)
 };

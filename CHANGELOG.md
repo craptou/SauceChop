@@ -37,6 +37,8 @@ Les changements notables de SauceChop sont consignés dans ce fichier. Le format
 - lecture audio suivant la permutation choisie, avec transitions bornées entre slices ;
 - sauvegarde et validation de l'ordre des slices dans l'état du plug-in ;
 - tests du modèle de permutation et de la lecture réordonnée à 44,1/48/96 kHz.
+- paramètre VST3 `Preview Play` notifié au host pour réveiller le traitement audio depuis l'interface ;
+- diagnostic visuel lorsque le host ne rappelle pas encore le moteur audio.
 
 ### Changed
 
@@ -47,6 +49,7 @@ Les changements notables de SauceChop sont consignés dans ce fichier. Le format
 
 - déclaration d'une queue VST3 infinie pour que les hosts continuent de traiter le générateur silencieux et que Play puisse démarrer sans événement MIDI ;
 - sélection visuelle replacée à la position chronologique de la slice après réorganisation.
+- commande Play transmise au Wrapper FL Studio comme changement de paramètre VST3, en plus de la commande temps réel interne.
 
 ### Security
 

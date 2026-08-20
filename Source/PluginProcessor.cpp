@@ -22,7 +22,10 @@ SauceChopAudioProcessor::SauceChopAudioProcessor()
         saucechop::parameters::outputGain);
     sliceCountParameter = parameterState.getRawParameterValue(
         saucechop::parameters::sliceCount);
-    jassert(outputGainParameter != nullptr && sliceCountParameter != nullptr);
+    previewPlayParameter = parameterState.getRawParameterValue(
+        saucechop::parameters::previewPlay);
+    jassert(outputGainParameter != nullptr && sliceCountParameter != nullptr
+            && previewPlayParameter != nullptr);
 
     currentSequenceOrder = saucechop::makeIdentitySequence(16);
     publishSequenceOrderLocked();
@@ -39,6 +42,7 @@ void SauceChopAudioProcessor::prepareToPlay(const double sampleRate,
     audioSliceCount = 0;
     realtimeSampleHazard.store(nullptr);
     audioIsPlaying.store(false);
+    audioPreviewPlayState = false;
     playbackProgress.store(0.0f);
     playbackSequenceProgress.store(0.0f);
     playbackSlice.store(-1);
@@ -114,6 +118,20 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             playbackEngine.setSequenceOrder(sequenceSnapshot.data(), publishedCount);
             consumedSequenceRevision = sequenceRevisionAfter;
         }
+    }
+
+    const auto parameterRequestsPlayback = previewPlayParameter != nullptr
+        && previewPlayParameter->load() >= 0.5f;
+
+    if (parameterRequestsPlayback != audioPreviewPlayState)
+    {
+        audioPreviewPlayState = parameterRequestsPlayback;
+        playbackRequested.store(parameterRequestsPlayback);
+
+        if (parameterRequestsPlayback)
+            playbackEngine.start();
+        else
+            playbackEngine.requestStop();
     }
 
     PlaybackCommand command = PlaybackCommand::none;
@@ -260,6 +278,12 @@ void SauceChopAudioProcessor::setStateInformation(const void* data, const int si
             restoredState.removeProperty(saucechop::stateProperties::sequenceOrder, nullptr);
             parameterState.replaceState(restoredState);
 
+            if (auto* previewParameter = parameterState.getParameter(
+                    saucechop::parameters::previewPlay))
+            {
+                previewParameter->setValue(0.0f);
+            }
+
             const auto restoredSliceChoice = sliceCountParameter != nullptr
                 ? juce::jlimit(0,
                                static_cast<int>(sliceCounts.size()) - 1,
@@ -312,21 +336,32 @@ SauceChopAudioProcessor::sourceSampleSnapshot() const noexcept
     return currentSourceSample;
 }
 
-void SauceChopAudioProcessor::startPlayback() noexcept
+void SauceChopAudioProcessor::startPlayback()
 {
     if (realtimeSourceSample.load() == nullptr)
         return;
 
+    setPreviewPlayParameter(true);
     playbackRequested.store(true);
     pendingPlaybackCommand.store(PlaybackCommand::playFromStart);
     playbackCommandSequence.fetch_add(1);
 }
 
-void SauceChopAudioProcessor::stopPlayback() noexcept
+void SauceChopAudioProcessor::stopPlayback()
 {
+    setPreviewPlayParameter(false);
     playbackRequested.store(false);
     pendingPlaybackCommand.store(PlaybackCommand::stop);
     playbackCommandSequence.fetch_add(1);
+}
+
+void SauceChopAudioProcessor::synchronisePlaybackControl()
+{
+    if (!playbackRequested.load() && !audioIsPlaying.load()
+        && previewPlayParameter != nullptr && previewPlayParameter->load() >= 0.5f)
+    {
+        setPreviewPlayParameter(false);
+    }
 }
 
 void SauceChopAudioProcessor::setSequenceSliceCount(const int sliceCount)
@@ -477,6 +512,30 @@ void SauceChopAudioProcessor::publishSequenceOrderLocked()
     realtimeSequenceRevision.fetch_add(1);
 }
 
+void SauceChopAudioProcessor::setPreviewPlayParameter(const bool shouldPlay)
+{
+    const auto alreadyAtTarget = previewPlayParameter != nullptr
+        && (previewPlayParameter->load() >= 0.5f) == shouldPlay;
+
+    if (alreadyAtTarget && !shouldPlay)
+        return;
+
+    if (auto* parameter = parameterState.getParameter(saucechop::parameters::previewPlay))
+    {
+        const auto normalisedValue = shouldPlay ? 1.0f : 0.0f;
+
+        if (!alreadyAtTarget)
+        {
+            parameter->beginChangeGesture();
+            parameter->setValueNotifyingHost(normalisedValue);
+            parameter->endChangeGesture();
+        }
+    }
+
+    updateHostDisplay(juce::AudioProcessorListener::ChangeDetails{}
+                          .withNonParameterStateChanged(true));
+}
+
 juce::AudioProcessorValueTreeState::ParameterLayout
 SauceChopAudioProcessor::createParameterLayout()
 {
@@ -501,6 +560,11 @@ SauceChopAudioProcessor::createParameterLayout()
         0,
         127,
         60));
+
+    layout.add(std::make_unique<juce::AudioParameterBool>(
+        juce::ParameterID{saucechop::parameters::previewPlay, 1},
+        "Preview Play",
+        false));
 
     return layout;
 }

@@ -219,11 +219,40 @@ void SauceChopAudioProcessorEditor::filesDropped(const juce::StringArray& files,
 
 void SauceChopAudioProcessorEditor::timerCallback()
 {
+    processor.synchronisePlaybackControl();
     const auto active = processor.isPlaybackActive();
     const auto requested = processor.isPlaybackRequested();
     waveformView.setPlaybackPosition(processor.playbackSequencePosition(), active);
     sequenceView.setActiveStep(active ? processor.currentPlaybackSequenceStep() : -1);
     playbackButton.setButtonText(active || requested ? "Stop" : "Play");
+
+    if (processor.sampleLoadState() == SauceChopAudioProcessor::SampleLoadState::ready)
+    {
+        if (active)
+        {
+            playbackRequestStartMilliseconds = 0.0;
+            statusLabel.setText("Playing", juce::dontSendNotification);
+        }
+        else if (requested)
+        {
+            if (playbackRequestStartMilliseconds <= 0.0)
+                playbackRequestStartMilliseconds = juce::Time::getMillisecondCounterHiRes();
+
+            const auto waitingMilliseconds = juce::Time::getMillisecondCounterHiRes()
+                - playbackRequestStartMilliseconds;
+
+            if (waitingMilliseconds >= 750.0)
+            {
+                statusLabel.setText("Waiting for FL Studio audio engine...",
+                                    juce::dontSendNotification);
+            }
+        }
+        else
+        {
+            playbackRequestStartMilliseconds = 0.0;
+            statusLabel.setText("Sample ready", juce::dontSendNotification);
+        }
+    }
 }
 
 void SauceChopAudioProcessorEditor::chooseSample()
@@ -306,7 +335,10 @@ void SauceChopAudioProcessorEditor::togglePlayback()
     if (processor.isPlaybackRequested() || processor.isPlaybackActive())
         processor.stopPlayback();
     else
+    {
+        playbackRequestStartMilliseconds = juce::Time::getMillisecondCounterHiRes();
         processor.startPlayback();
+    }
 
     timerCallback();
 }

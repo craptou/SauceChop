@@ -31,6 +31,8 @@ Chaque frontière est exprimée dans la fréquence d'échantillonnage originale 
 
 Comme la lecture peut être déclenchée depuis l'interface sans MIDI ni entrée audio, le VST3 annonce une queue infinie. Cette convention VST3 indique au host que le générateur doit rester appelable même lorsqu'il est momentanément silencieux.
 
+Le bouton de préécoute modifie également le paramètre VST3 `Preview Play` avec notification au host. Cette seconde voie réveille les wrappers qui ne reprennent pas le traitement à la suite d'une commande purement interne à l'interface. Le callback détecte le front du paramètre puis démarre ou arrête le moteur au début d'un bloc.
+
 Une voix contient au minimum :
 
 - identifiant de slice ;
