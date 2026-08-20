@@ -61,6 +61,8 @@ Critère de sortie : aucune lecture hors limites sous sanitizers/tests, et sorti
 
 Résultat : le plug-in est utile pour créer une variation et la rejouer.
 
+Statut : en cours. Le déclenchement MIDI One Shot/Gate, les offsets intra-bloc, la vélocité et le pool de 16 voix sont implémentés. Les transformations et outils de randomisation restent à faire.
+
 - gain, pitch par vitesse, reverse et fades ;
 - MIDI One Shot/Gate et polyphonie ;
 - randomisation déterministe ;

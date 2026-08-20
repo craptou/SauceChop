@@ -25,9 +25,9 @@ Chaque frontière est exprimée dans la fréquence d'échantillonnage originale 
 
 ## Position de lecture
 
-### Prototype M3 actuel
+### Prototype M4 actuel
 
-`SlicePlaybackEngine` parcourt les slices égales selon la permutation publiée par la bande `ORDER`. Il duplique une source mono en stéréo, conserve les deux canaux d'une source stéréo et applique le ratio `fréquence source / fréquence host` avec interpolation linéaire. Play repart du premier pas ; Stop utilise un fade linéaire de 5 ms et chaque frontière de slice un fade court borné. Les voix déclenchées individuellement arrivent en M4.
+`SlicePlaybackEngine` parcourt les slices égales selon la permutation publiée par la bande `ORDER`. `MidiVoiceEngine` ajoute les slices déclenchées individuellement par le Piano Roll. Les deux moteurs dupliquent une source mono en stéréo, conservent les deux canaux d'une source stéréo et appliquent le ratio `fréquence source / fréquence host` avec interpolation linéaire.
 
 Comme la lecture peut être déclenchée depuis l'interface sans MIDI ni entrée audio, le VST3 annonce une queue infinie. Cette convention VST3 indique au host que le générateur doit rester appelable même lorsqu'il est momentanément silencieux.
 
@@ -96,7 +96,7 @@ Le traitement ne suppose jamais que le BPM est constant entre deux blocs.
 
 ## MIDI
 
-Les événements du `MidiBuffer` doivent être traités à leur offset dans le bloc, pas seulement au début du bloc.
+Les événements du `MidiBuffer` sont traités à leur offset dans le bloc, pas seulement au début du bloc. Le moteur rend chaque intervalle situé entre deux événements puis applique le Note On ou Note Off au sample concerné.
 
 Mapping initial :
 
@@ -104,17 +104,17 @@ Mapping initial :
 sliceIndex = midiNoteNumber - midiBaseNote
 ```
 
-Un index hors plage est ignoré. Les Note Off sont associés à une note et à une voix ; plusieurs Note On de même hauteur doivent rester gérables.
+Un index hors plage est ignoré. `One Shot` ignore le Note Off et termine à la frontière de la slice. `Gate` associe le Note Off à la plus ancienne voix encore tenue de cette hauteur et applique un relâchement de 5 ms. La vélocité multiplie le gain de la voix.
 
 ## Polyphonie et voice stealing
 
-Ordre proposé pour voler une voix :
+Le pool contient 16 voix fixes, sans allocation dans le callback. L'ordre de vol est :
 
 1. voix déjà en relâchement ;
 2. voix au gain instantané le plus faible ;
 3. voix la plus ancienne.
 
-Le vol applique un fade très court afin d'éviter une discontinuité.
+Le résidu de la voix volée applique un fade très court afin d'éviter une discontinuité.
 
 ## Randomisation
 

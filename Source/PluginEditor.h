@@ -40,9 +40,13 @@ private:
     juce::Label sampleInfoLabel;
     juce::Label outputGainLabel;
     juce::Label sliceCountLabel;
+    juce::Label midiBaseNoteLabel;
+    juce::Label midiPlayModeLabel;
     juce::Label sequenceLabel;
     juce::Slider outputGainSlider;
+    juce::Slider midiBaseNoteSlider;
     juce::ComboBox sliceCountBox;
+    juce::ComboBox midiPlayModeBox;
     juce::TextButton loadSampleButton{"Load sample"};
     juce::TextButton playbackButton{"Play"};
     juce::TextButton resetOrderButton{"Reset order"};
@@ -53,7 +57,9 @@ private:
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
     using ComboBoxAttachment = juce::AudioProcessorValueTreeState::ComboBoxAttachment;
     std::unique_ptr<SliderAttachment> outputGainAttachment;
+    std::unique_ptr<SliderAttachment> midiBaseNoteAttachment;
     std::unique_ptr<ComboBoxAttachment> sliceCountAttachment;
+    std::unique_ptr<ComboBoxAttachment> midiPlayModeAttachment;
     double playbackRequestStartMilliseconds = 0.0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(SauceChopAudioProcessorEditor)

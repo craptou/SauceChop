@@ -5,6 +5,7 @@ namespace saucechop::parameters
 inline constexpr auto outputGain = "outputGain";
 inline constexpr auto sliceCount = "sliceCount";
 inline constexpr auto midiBaseNote = "midiBaseNote";
+inline constexpr auto midiPlayMode = "midiPlayMode";
 inline constexpr auto previewPlay = "previewPlay";
 } // namespace saucechop::parameters
 

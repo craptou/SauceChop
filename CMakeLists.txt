@@ -43,6 +43,8 @@ target_sources(SauceChop
         Source/PluginProcessor.h
         Source/audio/SlicePlaybackEngine.cpp
         Source/audio/SlicePlaybackEngine.h
+        Source/audio/MidiVoiceEngine.cpp
+        Source/audio/MidiVoiceEngine.h
         Source/files/SampleLoader.cpp
         Source/files/SampleLoader.h
         Source/files/SampleFileReader.cpp
@@ -83,6 +85,8 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     Source/PluginProcessor.h
     Source/audio/SlicePlaybackEngine.cpp
     Source/audio/SlicePlaybackEngine.h
+    Source/audio/MidiVoiceEngine.cpp
+    Source/audio/MidiVoiceEngine.h
     Source/files/SampleLoader.cpp
     Source/files/SampleLoader.h
     Source/files/SampleFileReader.cpp
@@ -109,6 +113,7 @@ if(SAUCECHOP_BUILD_TESTS)
         PRIVATE
             Tests/Main.cpp
             Tests/SlicePlaybackEngineTests.cpp
+            Tests/MidiVoiceEngineTests.cpp
             Tests/SampleFileReaderTests.cpp
             Tests/SequenceOrderTests.cpp
             Tests/SliceMathTests.cpp
@@ -118,6 +123,8 @@ if(SAUCECHOP_BUILD_TESTS)
             Source/files/SourceSample.h
             Source/audio/SlicePlaybackEngine.cpp
             Source/audio/SlicePlaybackEngine.h
+            Source/audio/MidiVoiceEngine.cpp
+            Source/audio/MidiVoiceEngine.h
             Source/model/SliceMath.cpp
             Source/model/SliceMath.h
             Source/model/SequenceOrder.cpp

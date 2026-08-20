@@ -39,6 +39,10 @@ Les changements notables de SauceChop sont consignés dans ce fichier. Le format
 - tests du modèle de permutation et de la lecture réordonnée à 44,1/48/96 kHz.
 - paramètre VST3 `Preview Play` notifié au host pour réveiller le traitement audio depuis l'interface ;
 - diagnostic visuel lorsque le host ne rappelle pas encore le moteur audio.
+- déclenchement des slices depuis le Piano Roll avec note de base configurable ;
+- modes MIDI `One Shot` et `Gate`, vélocité et offsets intra-bloc exacts ;
+- pool temps réel fixe de 16 voix avec vol priorisant les voix en relâchement, faibles puis anciennes ;
+- contrôles `BASE NOTE` et `MIDI MODE` dans l'interface.
 
 ### Changed
 

@@ -50,16 +50,16 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 - `DSP-004` ✅ Ajouter gain lissé et fades.
 - `DSP-005` Ajouter reverse.
 - `DSP-006` Ajouter pitch par ratio de vitesse.
-- `DSP-007` Implémenter pool de 16 voix et voice stealing.
+- `DSP-007` ✅ Implémenter pool de 16 voix et voice stealing.
 - `DSP-008` Ajouter protections NaN/infini en Debug.
 - `DSP-009` Mesurer allocations et CPU dans `processBlock()`.
 
 ## EPIC-06 — MIDI et séquence
 
-- `MIDI-001` Mapper les notes consécutives depuis la note 60.
-- `MIDI-002` Respecter les offsets d'événements dans le bloc.
-- `MIDI-003` Implémenter One Shot.
-- `MIDI-004` Implémenter Gate et Note Off.
+- `MIDI-001` ✅ Mapper les notes consécutives depuis la note 60.
+- `MIDI-002` ✅ Respecter les offsets d'événements dans le bloc.
+- `MIDI-003` ✅ Implémenter One Shot.
+- `MIDI-004` ✅ Implémenter Gate et Note Off.
 - `SEQ-001` ✅ Implémenter la lecture interne de l'ordre réorganisé.
 - `SEQ-002` ✅ Implémenter Play/Stop et reprise déterministe.
 

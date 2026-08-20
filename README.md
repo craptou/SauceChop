@@ -81,4 +81,6 @@ Pour tester dans FL Studio, copier le bundle `SauceChop.vst3` dans `C:\Program F
 
 ## Statut
 
-Jalon M3 terminé : WAV, AIFF et MP3 mono ou stéréo peuvent être chargés puis lus avec adaptation à la fréquence du host. Les commandes Play/Stop utilisent des fades anti-clic, le gain est lissé et un repère suit la lecture. La bande `ORDER` permet de sélectionner et réordonner les slices par glisser-déposer ; cette permutation est jouée, affichée sur la grande waveform et restaurée avec la session.
+Jalon M4 en cours : WAV, AIFF et MP3 mono ou stéréo peuvent être chargés puis lus avec adaptation à la fréquence du host. La bande `ORDER` permet de réorganiser la préécoute complète. Le Piano Roll déclenche maintenant les slices avec leur vélocité, au bon offset audio, en mode `One Shot` ou `Gate`, avec un pool borné à 16 voix.
+
+Dans FL Studio, la note indiquée par `BASE NOTE` joue la première slice, la note suivante joue la deuxième, etc. Avec la valeur par défaut 60 et 16 slices, la plage active va donc de 60 à 75. `One Shot` lit la slice jusqu'au bout ; `Gate` l'arrête avec un court relâchement lorsque la note se termine.

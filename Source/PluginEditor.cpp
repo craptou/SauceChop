@@ -102,12 +102,41 @@ SauceChopAudioProcessorEditor::SauceChopAudioProcessorEditor(
     };
     addAndMakeVisible(sliceCountBox);
 
+    midiBaseNoteLabel.setText("BASE NOTE", juce::dontSendNotification);
+    midiBaseNoteLabel.setJustificationType(juce::Justification::centred);
+    midiBaseNoteLabel.setColour(juce::Label::textColourId, secondaryTextColour);
+    addAndMakeVisible(midiBaseNoteLabel);
+
+    midiBaseNoteSlider.setSliderStyle(juce::Slider::LinearBar);
+    midiBaseNoteSlider.setTextBoxStyle(juce::Slider::TextBoxLeft, false, 52, 28);
+    midiBaseNoteSlider.setNumDecimalPlacesToDisplay(0);
+    midiBaseNoteSlider.setColour(juce::Slider::trackColourId,
+                                accentColour.withAlpha(0.45f));
+    midiBaseNoteSlider.setColour(juce::Slider::textBoxTextColourId,
+                                juce::Colours::white);
+    midiBaseNoteSlider.setColour(juce::Slider::textBoxOutlineColourId,
+                                juce::Colours::transparentBlack);
+    addAndMakeVisible(midiBaseNoteSlider);
+
+    midiPlayModeLabel.setText("MIDI MODE", juce::dontSendNotification);
+    midiPlayModeLabel.setJustificationType(juce::Justification::centred);
+    midiPlayModeLabel.setColour(juce::Label::textColourId, secondaryTextColour);
+    addAndMakeVisible(midiPlayModeLabel);
+
+    midiPlayModeBox.addItemList({"One Shot", "Gate"}, 1);
+    midiPlayModeBox.setJustificationType(juce::Justification::centred);
+    addAndMakeVisible(midiPlayModeBox);
+
     addAndMakeVisible(waveformView);
 
     outputGainAttachment = std::make_unique<SliderAttachment>(
         processor.parameters(), saucechop::parameters::outputGain, outputGainSlider);
+    midiBaseNoteAttachment = std::make_unique<SliderAttachment>(
+        processor.parameters(), saucechop::parameters::midiBaseNote, midiBaseNoteSlider);
     sliceCountAttachment = std::make_unique<ComboBoxAttachment>(
         processor.parameters(), saucechop::parameters::sliceCount, sliceCountBox);
+    midiPlayModeAttachment = std::make_unique<ComboBoxAttachment>(
+        processor.parameters(), saucechop::parameters::midiPlayMode, midiPlayModeBox);
 
     processor.addChangeListener(this);
     refreshSampleState();
@@ -160,20 +189,33 @@ void SauceChopAudioProcessorEditor::resized()
     area.removeFromBottom(12);
     waveformView.setBounds(area);
 
-    auto controls = footer.withSizeKeepingCentre(460, footer.getHeight());
-    auto playbackArea = controls.removeFromLeft(120).reduced(10, 42);
+    auto controls = footer.withSizeKeepingCentre(
+        juce::jmin(720, footer.getWidth()), footer.getHeight());
+    auto playbackArea = controls.removeFromLeft(110).reduced(8, 42);
     playbackButton.setBounds(playbackArea);
 
-    controls.removeFromLeft(10);
-    auto gainArea = controls.removeFromLeft(140).reduced(10, 6);
+    controls.removeFromLeft(6);
+    auto gainArea = controls.removeFromLeft(130).reduced(8, 6);
     outputGainLabel.setBounds(gainArea.removeFromTop(22));
     outputGainSlider.setBounds(gainArea);
 
-    controls.removeFromLeft(20);
-    auto sliceArea = controls.reduced(10, 28);
+    controls.removeFromLeft(6);
+    auto sliceArea = controls.removeFromLeft(92).reduced(6, 28);
     sliceCountLabel.setBounds(sliceArea.removeFromTop(24));
     sliceArea.removeFromTop(8);
     sliceCountBox.setBounds(sliceArea.removeFromTop(32));
+
+    controls.removeFromLeft(6);
+    auto baseNoteArea = controls.removeFromLeft(120).reduced(6, 28);
+    midiBaseNoteLabel.setBounds(baseNoteArea.removeFromTop(24));
+    baseNoteArea.removeFromTop(8);
+    midiBaseNoteSlider.setBounds(baseNoteArea.removeFromTop(32));
+
+    controls.removeFromLeft(6);
+    auto modeArea = controls.reduced(6, 28);
+    midiPlayModeLabel.setBounds(modeArea.removeFromTop(24));
+    modeArea.removeFromTop(8);
+    midiPlayModeBox.setBounds(modeArea.removeFromTop(32));
 }
 
 void SauceChopAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* source)
@@ -224,6 +266,11 @@ void SauceChopAudioProcessorEditor::timerCallback()
     const auto requested = processor.isPlaybackRequested();
     waveformView.setPlaybackPosition(processor.playbackSequencePosition(), active);
     sequenceView.setActiveStep(active ? processor.currentPlaybackSequenceStep() : -1);
+    const auto midiSlice = processor.currentMidiSlice();
+
+    if (!active && midiSlice >= 0)
+        waveformView.setSelectedSlice(midiSlice);
+
     playbackButton.setButtonText(active || requested ? "Stop" : "Play");
 
     if (processor.sampleLoadState() == SauceChopAudioProcessor::SampleLoadState::ready)

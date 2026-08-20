@@ -1,5 +1,6 @@
 #pragma once
 
+#include "audio/MidiVoiceEngine.h"
 #include "audio/SlicePlaybackEngine.h"
 #include "files/SampleLoader.h"
 
@@ -89,6 +90,11 @@ public:
         return playbackSequenceStep.load();
     }
 
+    [[nodiscard]] int currentMidiSlice() const noexcept
+    {
+        return midiPlaybackSlice.load();
+    }
+
     [[nodiscard]] std::shared_ptr<const saucechop::SourceSample>
     sourceSampleSnapshot() const noexcept;
 
@@ -133,6 +139,8 @@ private:
     juce::AudioProcessorValueTreeState parameterState;
     const std::atomic<float>* outputGainParameter = nullptr;
     const std::atomic<float>* sliceCountParameter = nullptr;
+    const std::atomic<float>* midiBaseNoteParameter = nullptr;
+    const std::atomic<float>* midiPlayModeParameter = nullptr;
     const std::atomic<float>* previewPlayParameter = nullptr;
 
     std::atomic<const saucechop::SourceSample*> realtimeSourceSample{nullptr};
@@ -142,6 +150,7 @@ private:
     std::vector<std::shared_ptr<const saucechop::SourceSample>> retiredSourceSamples;
 
     saucechop::SlicePlaybackEngine playbackEngine;
+    saucechop::MidiVoiceEngine midiVoiceEngine;
     std::atomic<PlaybackCommand> pendingPlaybackCommand{PlaybackCommand::none};
     std::atomic<std::uint64_t> playbackCommandSequence{0};
     std::uint64_t consumedPlaybackCommandSequence = 0;
@@ -152,6 +161,7 @@ private:
     std::atomic<float> playbackSequenceProgress{0.0f};
     std::atomic<int> playbackSlice{-1};
     std::atomic<int> playbackSequenceStep{-1};
+    std::atomic<int> midiPlaybackSlice{-1};
 
     mutable juce::CriticalSection sequenceOrderLock;
     std::vector<int> currentSequenceOrder;

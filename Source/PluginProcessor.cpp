@@ -22,9 +22,14 @@ SauceChopAudioProcessor::SauceChopAudioProcessor()
         saucechop::parameters::outputGain);
     sliceCountParameter = parameterState.getRawParameterValue(
         saucechop::parameters::sliceCount);
+    midiBaseNoteParameter = parameterState.getRawParameterValue(
+        saucechop::parameters::midiBaseNote);
+    midiPlayModeParameter = parameterState.getRawParameterValue(
+        saucechop::parameters::midiPlayMode);
     previewPlayParameter = parameterState.getRawParameterValue(
         saucechop::parameters::previewPlay);
     jassert(outputGainParameter != nullptr && sliceCountParameter != nullptr
+            && midiBaseNoteParameter != nullptr && midiPlayModeParameter != nullptr
             && previewPlayParameter != nullptr);
 
     currentSequenceOrder = saucechop::makeIdentitySequence(16);
@@ -37,6 +42,7 @@ void SauceChopAudioProcessor::prepareToPlay(const double sampleRate,
                                              const int maximumExpectedSamplesPerBlock)
 {
     playbackEngine.prepare(sampleRate, maximumExpectedSamplesPerBlock);
+    midiVoiceEngine.prepare(sampleRate);
     consumedPlaybackCommandSequence = playbackCommandSequence.load();
     consumedSequenceRevision = std::numeric_limits<std::uint64_t>::max();
     audioSliceCount = 0;
@@ -47,15 +53,18 @@ void SauceChopAudioProcessor::prepareToPlay(const double sampleRate,
     playbackSequenceProgress.store(0.0f);
     playbackSlice.store(-1);
     playbackSequenceStep.store(-1);
+    midiPlaybackSlice.store(-1);
 }
 
 void SauceChopAudioProcessor::releaseResources()
 {
     playbackEngine.setSource(nullptr);
+    midiVoiceEngine.setSource(nullptr);
     realtimeSampleHazard.store(nullptr);
     audioIsPlaying.store(false);
     playbackSequenceProgress.store(0.0f);
     playbackSequenceStep.store(-1);
+    midiPlaybackSlice.store(-1);
 }
 
 bool SauceChopAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -68,8 +77,6 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
                                            juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    juce::ignoreUnused(midiMessages);
-
     const saucechop::SourceSample* publishedSample = nullptr;
 
     // The hazard-pointer handshake keeps the immutable sample alive while this
@@ -81,6 +88,7 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     } while (publishedSample != realtimeSourceSample.load());
 
     playbackEngine.setSource(publishedSample);
+    midiVoiceEngine.setSource(publishedSample);
 
     const auto sliceChoice = sliceCountParameter != nullptr
         ? juce::jlimit(0,
@@ -94,6 +102,7 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     {
         audioSliceCount = requestedSliceCount;
         playbackEngine.setSliceCount(audioSliceCount);
+        midiVoiceEngine.setSliceCount(audioSliceCount);
     }
 
     const auto sequenceRevisionBefore = realtimeSequenceRevision.load();
@@ -156,7 +165,19 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     }
 
     const auto outputGainDb = outputGainParameter != nullptr ? outputGainParameter->load() : 0.0f;
-    playbackEngine.process(buffer, juce::Decibels::decibelsToGain(outputGainDb));
+    const auto outputGainLinear = juce::Decibels::decibelsToGain(outputGainDb);
+    playbackEngine.process(buffer, outputGainLinear);
+
+    const auto midiBaseNote = midiBaseNoteParameter != nullptr
+        ? juce::roundToInt(midiBaseNoteParameter->load())
+        : 60;
+    const auto midiPlayMode = midiPlayModeParameter != nullptr
+        && juce::roundToInt(midiPlayModeParameter->load()) == 1
+        ? saucechop::MidiVoiceEngine::PlayMode::gate
+        : saucechop::MidiVoiceEngine::PlayMode::oneShot;
+    midiVoiceEngine.setPlayMode(midiPlayMode);
+    midiVoiceEngine.processMidi(buffer, midiMessages, midiBaseNote, outputGainLinear);
+    midiPlaybackSlice.store(midiVoiceEngine.mostRecentActiveSlice());
 
     const auto playing = playbackEngine.isPlaying();
     audioIsPlaying.store(playing);
@@ -560,6 +581,12 @@ SauceChopAudioProcessor::createParameterLayout()
         0,
         127,
         60));
+
+    layout.add(std::make_unique<juce::AudioParameterChoice>(
+        juce::ParameterID{saucechop::parameters::midiPlayMode, 1},
+        "MIDI Play Mode",
+        juce::StringArray{"One Shot", "Gate"},
+        0));
 
     layout.add(std::make_unique<juce::AudioParameterBool>(
         juce::ParameterID{saucechop::parameters::previewPlay, 1},
