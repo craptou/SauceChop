@@ -46,6 +46,8 @@ Critère de sortie : corpus d'au moins 30 fichiers valides/invalides chargé san
 
 Résultat : la séquence de slices produit du son.
 
+Statut : en cours. La lecture dans l'ordre source, la conversion de fréquence, Play/Stop, les fades et le repère visuel sont implémentés. La bande d'ordre et le réarrangement restent à faire.
+
 - découpage 4/8/16/32 ;
 - moteur de voix ;
 - interpolation et conversion de fréquence ;

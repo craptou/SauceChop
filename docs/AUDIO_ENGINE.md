@@ -25,6 +25,10 @@ Chaque frontière est exprimée dans la fréquence d'échantillonnage originale 
 
 ## Position de lecture
 
+### Prototype M3 actuel
+
+`SlicePlaybackEngine` parcourt actuellement les slices égales dans l'ordre source avec une seule position de lecture. Il duplique une source mono en stéréo, conserve les deux canaux d'une source stéréo et applique le ratio `fréquence source / fréquence host` avec interpolation linéaire. Play repart de zéro ; Stop et les extrémités utilisent un fade linéaire de 5 ms. Le réarrangement et les voix déclenchées individuellement sont les prochaines extensions de M3/M4.
+
 Une voix contient au minimum :
 
 - identifiant de slice ;
@@ -167,4 +171,3 @@ Un rendu annulé ou échoué supprime uniquement son fichier temporaire identifi
 - déterminisme du rendu hors ligne à paramètres et architecture identiques.
 
 Ces valeurs servent de garde-fous et seront ajustées après les premiers benchmarks.
-

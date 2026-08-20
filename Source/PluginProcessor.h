@@ -1,11 +1,14 @@
 #pragma once
 
+#include "audio/SlicePlaybackEngine.h"
 #include "files/SampleLoader.h"
 
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <atomic>
+#include <cstdint>
 #include <memory>
+#include <vector>
 
 class SauceChopAudioProcessor final : public juce::AudioProcessor,
                                      public juce::ChangeBroadcaster
@@ -46,6 +49,28 @@ public:
     void setStateInformation(const void* data, int sizeInBytes) override;
 
     void loadSampleAsync(const juce::File& file);
+    void startPlayback() noexcept;
+    void stopPlayback() noexcept;
+
+    [[nodiscard]] bool isPlaybackRequested() const noexcept
+    {
+        return playbackRequested.load();
+    }
+
+    [[nodiscard]] bool isPlaybackActive() const noexcept
+    {
+        return audioIsPlaying.load();
+    }
+
+    [[nodiscard]] float playbackPosition() const noexcept
+    {
+        return playbackProgress.load();
+    }
+
+    [[nodiscard]] int currentPlaybackSlice() const noexcept
+    {
+        return playbackSlice.load();
+    }
 
     [[nodiscard]] std::shared_ptr<const saucechop::SourceSample>
     sourceSampleSnapshot() const noexcept;
@@ -63,6 +88,13 @@ public:
     }
 
 private:
+    enum class PlaybackCommand
+    {
+        none,
+        playFromStart,
+        stop
+    };
+
     struct SampleReference
     {
         juce::String path;
@@ -75,9 +107,28 @@ private:
     void setSampleReference(SampleReference reference);
     [[nodiscard]] SampleReference sampleReferenceSnapshot() const;
     void handleSampleLoadResult(saucechop::SampleLoadResult result);
+    void publishSourceSample(std::shared_ptr<const saucechop::SourceSample> sample);
+    void reclaimRetiredSamples();
 
     juce::AudioProcessorValueTreeState parameterState;
-    std::atomic<std::shared_ptr<const saucechop::SourceSample>> sourceSample;
+    const std::atomic<float>* outputGainParameter = nullptr;
+    const std::atomic<float>* sliceCountParameter = nullptr;
+
+    std::atomic<const saucechop::SourceSample*> realtimeSourceSample{nullptr};
+    std::atomic<const saucechop::SourceSample*> realtimeSampleHazard{nullptr};
+    mutable juce::CriticalSection sampleOwnershipLock;
+    std::shared_ptr<const saucechop::SourceSample> currentSourceSample;
+    std::vector<std::shared_ptr<const saucechop::SourceSample>> retiredSourceSamples;
+
+    saucechop::SlicePlaybackEngine playbackEngine;
+    std::atomic<PlaybackCommand> pendingPlaybackCommand{PlaybackCommand::none};
+    std::atomic<std::uint64_t> playbackCommandSequence{0};
+    std::uint64_t consumedPlaybackCommandSequence = 0;
+    std::atomic<bool> playbackRequested{false};
+    std::atomic<bool> audioIsPlaying{false};
+    std::atomic<float> playbackProgress{0.0f};
+    std::atomic<int> playbackSlice{-1};
+
     std::atomic<SampleLoadState> currentLoadState{SampleLoadState::empty};
     mutable juce::CriticalSection loadMessageLock;
     juce::String currentLoadMessage;

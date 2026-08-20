@@ -39,6 +39,18 @@ void WaveformView::setDropTargetActive(const bool shouldBeActive)
     repaint();
 }
 
+void WaveformView::setPlaybackPosition(const float newPosition, const bool isActive)
+{
+    const auto sanitisedPosition = juce::jlimit(0.0f, 1.0f, newPosition);
+
+    if (playbackPosition == sanitisedPosition && playbackActive == isActive)
+        return;
+
+    playbackPosition = sanitisedPosition;
+    playbackActive = isActive;
+    repaint();
+}
+
 void WaveformView::paint(juce::Graphics& graphics)
 {
     auto bounds = getLocalBounds().toFloat().reduced(1.0f);
@@ -56,6 +68,7 @@ void WaveformView::paint(juce::Graphics& graphics)
         drawWaveform(graphics, bounds);
 
     drawSliceGrid(graphics, bounds);
+    drawPlayhead(graphics, bounds);
 }
 
 void WaveformView::drawPlaceholder(juce::Graphics& graphics,
@@ -108,4 +121,19 @@ void WaveformView::drawSliceGrid(juce::Graphics& graphics,
             + bounds.getWidth() * static_cast<float>(slice) / static_cast<float>(sliceCount);
         graphics.drawVerticalLine(static_cast<int>(x), bounds.getY(), bounds.getBottom());
     }
+}
+
+void WaveformView::drawPlayhead(juce::Graphics& graphics,
+                                const juce::Rectangle<float> bounds) const
+{
+    if (sample == nullptr || (!playbackActive && playbackPosition <= 0.0f))
+        return;
+
+    const auto x = bounds.getX() + bounds.getWidth() * playbackPosition;
+    graphics.setColour(juce::Colours::white.withAlpha(playbackActive ? 0.95f : 0.55f));
+    graphics.drawLine(x, bounds.getY(), x, bounds.getBottom(), 2.0f);
+
+    juce::Path marker;
+    marker.addTriangle(x - 5.0f, bounds.getY(), x + 5.0f, bounds.getY(), x, bounds.getY() + 7.0f);
+    graphics.fillPath(marker);
 }

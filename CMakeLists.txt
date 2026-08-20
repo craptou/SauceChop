@@ -41,6 +41,8 @@ target_sources(SauceChop
         Source/Parameters.h
         Source/PluginProcessor.cpp
         Source/PluginProcessor.h
+        Source/audio/SlicePlaybackEngine.cpp
+        Source/audio/SlicePlaybackEngine.h
         Source/files/SampleLoader.cpp
         Source/files/SampleLoader.h
         Source/files/SampleFileReader.cpp
@@ -75,6 +77,8 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     Source/Parameters.h
     Source/PluginProcessor.cpp
     Source/PluginProcessor.h
+    Source/audio/SlicePlaybackEngine.cpp
+    Source/audio/SlicePlaybackEngine.h
     Source/files/SampleLoader.cpp
     Source/files/SampleLoader.h
     Source/files/SampleFileReader.cpp
@@ -96,12 +100,15 @@ if(SAUCECHOP_BUILD_TESTS)
     target_sources(SauceChopTests
         PRIVATE
             Tests/Main.cpp
+            Tests/SlicePlaybackEngineTests.cpp
             Tests/SampleFileReaderTests.cpp
             Tests/SliceMathTests.cpp
             Tests/WaveformPeaksTests.cpp
             Source/files/SampleFileReader.cpp
             Source/files/SampleFileReader.h
             Source/files/SourceSample.h
+            Source/audio/SlicePlaybackEngine.cpp
+            Source/audio/SlicePlaybackEngine.h
             Source/model/SliceMath.cpp
             Source/model/SliceMath.h
             Source/model/WaveformPeaks.cpp

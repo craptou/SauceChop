@@ -44,6 +44,15 @@ SauceChopAudioProcessorEditor::SauceChopAudioProcessorEditor(
     };
     addAndMakeVisible(loadSampleButton);
 
+    playbackButton.setColour(juce::TextButton::buttonColourId,
+                             accentColour.darker(0.25f));
+    playbackButton.setColour(juce::TextButton::textColourOffId, juce::Colours::white);
+    playbackButton.onClick = [this]
+    {
+        togglePlayback();
+    };
+    addAndMakeVisible(playbackButton);
+
     outputGainLabel.setText("OUTPUT", juce::dontSendNotification);
     outputGainLabel.setJustificationType(juce::Justification::centred);
     outputGainLabel.setColour(juce::Label::textColourId, secondaryTextColour);
@@ -82,6 +91,7 @@ SauceChopAudioProcessorEditor::SauceChopAudioProcessorEditor(
     processor.addChangeListener(this);
     refreshSampleState();
     updateSliceCount();
+    startTimerHz(30);
 
     setResizable(true, true);
     setResizeLimits(680, 460, 1400, 900);
@@ -90,6 +100,7 @@ SauceChopAudioProcessorEditor::SauceChopAudioProcessorEditor(
 
 SauceChopAudioProcessorEditor::~SauceChopAudioProcessorEditor()
 {
+    stopTimer();
     processor.removeChangeListener(this);
     fileChooser.reset();
 }
@@ -120,7 +131,11 @@ void SauceChopAudioProcessorEditor::resized()
     area.removeFromBottom(16);
     waveformView.setBounds(area);
 
-    auto controls = footer.withSizeKeepingCentre(300, footer.getHeight());
+    auto controls = footer.withSizeKeepingCentre(460, footer.getHeight());
+    auto playbackArea = controls.removeFromLeft(120).reduced(10, 42);
+    playbackButton.setBounds(playbackArea);
+
+    controls.removeFromLeft(10);
     auto gainArea = controls.removeFromLeft(140).reduced(10, 6);
     outputGainLabel.setBounds(gainArea.removeFromTop(22));
     outputGainSlider.setBounds(gainArea);
@@ -170,6 +185,14 @@ void SauceChopAudioProcessorEditor::filesDropped(const juce::StringArray& files,
         processor.loadSampleAsync(juce::File{*match});
 }
 
+void SauceChopAudioProcessorEditor::timerCallback()
+{
+    const auto active = processor.isPlaybackActive();
+    const auto requested = processor.isPlaybackRequested();
+    waveformView.setPlaybackPosition(processor.playbackPosition(), active);
+    playbackButton.setButtonText(active || requested ? "Stop" : "Play");
+}
+
 void SauceChopAudioProcessorEditor::chooseSample()
 {
     fileChooser = std::make_unique<juce::FileChooser>(
@@ -199,7 +222,7 @@ void SauceChopAudioProcessorEditor::refreshSampleState()
     {
         case SauceChopAudioProcessor::SampleLoadState::empty:
             statusLabel.setText("Ready for a sample", juce::dontSendNotification);
-            sampleInfoLabel.setText("WAV, AIFF or MP3 • mono or stereo • maximum 10 minutes",
+            sampleInfoLabel.setText("WAV, AIFF or MP3 | mono or stereo | maximum 10 minutes",
                                     juce::dontSendNotification);
             break;
 
@@ -214,9 +237,9 @@ void SauceChopAudioProcessorEditor::refreshSampleState()
             {
                 const auto channelText = sample->channelCount == 1 ? "mono" : "stereo";
                 const auto sampleRateKhz = sample->originalSampleRateHz / 1000.0;
-                sampleInfoLabel.setText(sample->sourceFile.getFileName() + "  •  "
-                                            + formatDuration(sample->durationSeconds()) + "  •  "
-                                            + juce::String{sampleRateKhz, 1} + " kHz  •  "
+                sampleInfoLabel.setText(sample->sourceFile.getFileName() + "  |  "
+                                            + formatDuration(sample->durationSeconds()) + "  |  "
+                                            + juce::String{sampleRateKhz, 1} + " kHz  |  "
                                             + channelText,
                                         juce::dontSendNotification);
             }
@@ -230,12 +253,25 @@ void SauceChopAudioProcessorEditor::refreshSampleState()
 
     loadSampleButton.setEnabled(processor.sampleLoadState()
                                 != SauceChopAudioProcessor::SampleLoadState::loading);
+    playbackButton.setEnabled(sample != nullptr
+                              && processor.sampleLoadState()
+                                  == SauceChopAudioProcessor::SampleLoadState::ready);
 }
 
 void SauceChopAudioProcessorEditor::updateSliceCount()
 {
     const auto selectedText = sliceCountBox.getText();
     waveformView.setSliceCount(selectedText.isNotEmpty() ? selectedText.getIntValue() : 16);
+}
+
+void SauceChopAudioProcessorEditor::togglePlayback()
+{
+    if (processor.isPlaybackRequested() || processor.isPlaybackActive())
+        processor.stopPlayback();
+    else
+        processor.startPlayback();
+
+    timerCallback();
 }
 
 bool SauceChopAudioProcessorEditor::isSupportedAudioFile(const juce::String& path)

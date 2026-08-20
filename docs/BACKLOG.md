@@ -44,10 +44,10 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 
 ## EPIC-05 — Moteur temps réel
 
-- `DSP-001` Définir `EngineSnapshot` et sa publication sûre.
-- `DSP-002` Implémenter une voix mono/stéréo bornée.
-- `DSP-003` Implémenter conversion de fréquence et interpolation.
-- `DSP-004` Ajouter gain lissé et fades.
+- `DSP-001` Définir l'`EngineSnapshot` complet (la publication sûre du sample source est prête).
+- `DSP-002` ✅ Implémenter une voix mono/stéréo bornée.
+- `DSP-003` ✅ Implémenter conversion de fréquence et interpolation.
+- `DSP-004` ✅ Ajouter gain lissé et fades.
 - `DSP-005` Ajouter reverse.
 - `DSP-006` Ajouter pitch par ratio de vitesse.
 - `DSP-007` Implémenter pool de 16 voix et voice stealing.
@@ -60,8 +60,8 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 - `MIDI-002` Respecter les offsets d'événements dans le bloc.
 - `MIDI-003` Implémenter One Shot.
 - `MIDI-004` Implémenter Gate et Note Off.
-- `SEQ-001` Implémenter lecture interne de l'ordre.
-- `SEQ-002` Implémenter Play/Stop et reprise déterministe.
+- `SEQ-001` ✅ Implémenter lecture interne de l'ordre source.
+- `SEQ-002` ✅ Implémenter Play/Stop et reprise déterministe.
 
 ## EPIC-07 — Création et historique
 

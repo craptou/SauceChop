@@ -164,15 +164,15 @@ Ils assurent le décodage audio, le calcul de forme d'onde, le hash et le rendu 
 
 ## Publication d'état
 
-Approche initiale :
+Approche initiale, mise en œuvre pour le sample source depuis M3 :
 
 1. l'UI modifie le `ValueTree` éditable ;
 2. un `EngineSnapshot` complet est construit hors du callback audio ;
-3. une référence partagée immuable est publiée atomiquement ;
+3. le propriétaire partagé reste côté message et un pointeur immuable est publié atomiquement ;
 4. `processBlock()` adopte le nouveau snapshot au début d'un bloc ;
-5. les anciennes références sont détruites hors du thread audio ou par un mécanisme garantissant l'absence de dernière libération dans le callback.
+5. un pointeur de protection annoncé par le callback empêche la destruction d'un ancien sample encore utilisé ; les références retirées sont libérées côté message.
 
-Le point 5 doit être validé par un test spécifique. Un simple `shared_ptr` atomique peut provoquer la destruction du dernier propriétaire sur le thread audio.
+Un simple `shared_ptr` atomique n'est volontairement pas utilisé : il pourrait provoquer la destruction du dernier propriétaire sur le thread audio.
 
 ## Paramètres VST
 

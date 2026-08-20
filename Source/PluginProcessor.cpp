@@ -3,9 +3,13 @@
 #include "Parameters.h"
 #include "PluginEditor.h"
 
+#include <array>
+#include <cmath>
+
 namespace
 {
 constexpr auto stateTreeName = "SauceChopState";
+constexpr std::array sliceCounts{4, 8, 16, 32};
 } // namespace
 
 SauceChopAudioProcessor::SauceChopAudioProcessor()
@@ -13,6 +17,11 @@ SauceChopAudioProcessor::SauceChopAudioProcessor()
           "Output", juce::AudioChannelSet::stereo(), true)),
       parameterState(*this, nullptr, stateTreeName, createParameterLayout())
 {
+    outputGainParameter = parameterState.getRawParameterValue(
+        saucechop::parameters::outputGain);
+    sliceCountParameter = parameterState.getRawParameterValue(
+        saucechop::parameters::sliceCount);
+    jassert(outputGainParameter != nullptr && sliceCountParameter != nullptr);
 }
 
 SauceChopAudioProcessor::~SauceChopAudioProcessor() = default;
@@ -20,11 +29,19 @@ SauceChopAudioProcessor::~SauceChopAudioProcessor() = default;
 void SauceChopAudioProcessor::prepareToPlay(const double sampleRate,
                                              const int maximumExpectedSamplesPerBlock)
 {
-    juce::ignoreUnused(sampleRate, maximumExpectedSamplesPerBlock);
+    playbackEngine.prepare(sampleRate, maximumExpectedSamplesPerBlock);
+    consumedPlaybackCommandSequence = playbackCommandSequence.load();
+    realtimeSampleHazard.store(nullptr);
+    audioIsPlaying.store(false);
+    playbackProgress.store(0.0f);
+    playbackSlice.store(-1);
 }
 
 void SauceChopAudioProcessor::releaseResources()
 {
+    playbackEngine.setSource(nullptr);
+    realtimeSampleHazard.store(nullptr);
+    audioIsPlaying.store(false);
 }
 
 bool SauceChopAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -39,8 +56,56 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     juce::ScopedNoDenormals noDenormals;
     juce::ignoreUnused(midiMessages);
 
-    // M1 is intentionally silent. The sample playback engine is introduced in M2/M3.
-    buffer.clear();
+    const saucechop::SourceSample* publishedSample = nullptr;
+
+    // The hazard-pointer handshake keeps the immutable sample alive while this
+    // block is rendered without locks or shared_ptr destruction on the audio thread.
+    do
+    {
+        publishedSample = realtimeSourceSample.load();
+        realtimeSampleHazard.store(publishedSample);
+    } while (publishedSample != realtimeSourceSample.load());
+
+    playbackEngine.setSource(publishedSample);
+
+    PlaybackCommand command = PlaybackCommand::none;
+    std::uint64_t commandSequence = 0;
+    std::uint64_t verifiedSequence = 0;
+
+    do
+    {
+        commandSequence = playbackCommandSequence.load();
+        command = pendingPlaybackCommand.load();
+        verifiedSequence = playbackCommandSequence.load();
+    } while (commandSequence != verifiedSequence);
+
+    if (commandSequence != consumedPlaybackCommandSequence)
+    {
+        consumedPlaybackCommandSequence = commandSequence;
+
+        if (command == PlaybackCommand::playFromStart)
+            playbackEngine.start();
+        else if (command == PlaybackCommand::stop)
+            playbackEngine.requestStop();
+    }
+
+    const auto sliceChoice = sliceCountParameter != nullptr
+        ? juce::jlimit(0,
+                       static_cast<int>(sliceCounts.size()) - 1,
+                       juce::roundToInt(sliceCountParameter->load()))
+        : 2;
+    playbackEngine.setSliceCount(sliceCounts[static_cast<std::size_t>(sliceChoice)]);
+
+    const auto outputGainDb = outputGainParameter != nullptr ? outputGainParameter->load() : 0.0f;
+    playbackEngine.process(buffer, juce::Decibels::decibelsToGain(outputGainDb));
+
+    const auto playing = playbackEngine.isPlaying();
+    audioIsPlaying.store(playing);
+    playbackProgress.store(static_cast<float>(playbackEngine.progress()));
+    playbackSlice.store(playbackEngine.currentSlice());
+
+    if (!playing && playbackRequested.load())
+        playbackRequested.store(false);
 }
 
 juce::AudioProcessorEditor* SauceChopAudioProcessor::createEditor()
@@ -140,7 +205,7 @@ void SauceChopAudioProcessor::setStateInformation(const void* data, const int si
             restoredState.removeProperty(saucechop::stateProperties::sampleFileSize, nullptr);
             restoredState.removeProperty(saucechop::stateProperties::sampleModifiedTime, nullptr);
             parameterState.replaceState(restoredState);
-            sourceSample.store(nullptr);
+            publishSourceSample(nullptr);
             setSampleReference(restoredReference);
 
             if (restoredReference.path.isNotEmpty())
@@ -159,8 +224,9 @@ void SauceChopAudioProcessor::setStateInformation(const void* data, const int si
 
 void SauceChopAudioProcessor::loadSampleAsync(const juce::File& file)
 {
+    stopPlayback();
     currentLoadState.store(SampleLoadState::loading);
-    setLoadMessage("Loading " + file.getFileName() + "…");
+    setLoadMessage("Loading " + file.getFileName() + "...");
     sendChangeMessage();
 
     sampleLoader.load(file,
@@ -173,7 +239,25 @@ void SauceChopAudioProcessor::loadSampleAsync(const juce::File& file)
 std::shared_ptr<const saucechop::SourceSample>
 SauceChopAudioProcessor::sourceSampleSnapshot() const noexcept
 {
-    return sourceSample.load();
+    const juce::ScopedLock lock(sampleOwnershipLock);
+    return currentSourceSample;
+}
+
+void SauceChopAudioProcessor::startPlayback() noexcept
+{
+    if (realtimeSourceSample.load() == nullptr)
+        return;
+
+    playbackRequested.store(true);
+    pendingPlaybackCommand.store(PlaybackCommand::playFromStart);
+    playbackCommandSequence.fetch_add(1);
+}
+
+void SauceChopAudioProcessor::stopPlayback() noexcept
+{
+    playbackRequested.store(false);
+    pendingPlaybackCommand.store(PlaybackCommand::stop);
+    playbackCommandSequence.fetch_add(1);
 }
 
 juce::String SauceChopAudioProcessor::sampleLoadMessage() const
@@ -216,7 +300,7 @@ void SauceChopAudioProcessor::handleSampleLoadResult(saucechop::SampleLoadResult
     }
 
     const auto loadedSample = std::move(result.sample);
-    sourceSample.store(loadedSample);
+    publishSourceSample(loadedSample);
     currentLoadState.store(SampleLoadState::ready);
     setLoadMessage("Sample ready");
     setSampleReference({loadedSample->sourceFile.getFullPathName(),
@@ -224,6 +308,31 @@ void SauceChopAudioProcessor::handleSampleLoadResult(saucechop::SampleLoadResult
                         loadedSample->modificationTime.toMilliseconds()});
 
     sendChangeMessage();
+}
+
+void SauceChopAudioProcessor::publishSourceSample(
+    std::shared_ptr<const saucechop::SourceSample> sample)
+{
+    const juce::ScopedLock lock(sampleOwnershipLock);
+
+    if (currentSourceSample != nullptr)
+        retiredSourceSamples.push_back(std::move(currentSourceSample));
+
+    currentSourceSample = std::move(sample);
+    realtimeSourceSample.store(currentSourceSample.get());
+    playbackProgress.store(0.0f);
+    playbackSlice.store(-1);
+    reclaimRetiredSamples();
+}
+
+void SauceChopAudioProcessor::reclaimRetiredSamples()
+{
+    const auto* protectedSample = realtimeSampleHazard.load();
+    std::erase_if(retiredSourceSamples,
+                  [protectedSample](const auto& sample)
+                  {
+                      return sample.get() != protectedSample;
+                  });
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout

@@ -7,7 +7,8 @@
 
 class SauceChopAudioProcessorEditor final : public juce::AudioProcessorEditor,
                                            private juce::ChangeListener,
-                                           private juce::FileDragAndDropTarget
+                                           private juce::FileDragAndDropTarget,
+                                           private juce::Timer
 {
 public:
     explicit SauceChopAudioProcessorEditor(SauceChopAudioProcessor& processor);
@@ -22,10 +23,12 @@ private:
     void fileDragEnter(const juce::StringArray& files, int x, int y) override;
     void fileDragExit(const juce::StringArray& files) override;
     void filesDropped(const juce::StringArray& files, int x, int y) override;
+    void timerCallback() override;
 
     void chooseSample();
     void refreshSampleState();
     void updateSliceCount();
+    void togglePlayback();
     [[nodiscard]] static bool isSupportedAudioFile(const juce::String& path);
 
     SauceChopAudioProcessor& processor;
@@ -38,6 +41,7 @@ private:
     juce::Slider outputGainSlider;
     juce::ComboBox sliceCountBox;
     juce::TextButton loadSampleButton{"Load sample"};
+    juce::TextButton playbackButton{"Play"};
     WaveformView waveformView;
     std::unique_ptr<juce::FileChooser> fileChooser;
 

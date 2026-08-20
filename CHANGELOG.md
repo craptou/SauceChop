@@ -26,6 +26,12 @@ Les changements notables de SauceChop sont consignés dans ce fichier. Le format
 - restauration du chemin et de l'identité de base du sample avec l'état du plug-in ;
 - tests de décodage WAV/AIFF/MP3 et de génération des pics.
 - import et décodage MP3 via le codec multimédia natif de Windows.
+- moteur de lecture mono/stéréo sans allocation dans le callback audio ;
+- adaptation de fréquence par interpolation linéaire et accès source bornés ;
+- commandes Play/Stop avec fades anti-clic et gain de sortie lissé ;
+- publication du sample par pointeur protégé afin que sa destruction reste hors du thread audio ;
+- repère de lecture animé sur la waveform et suivi de la slice active ;
+- tests du moteur à fréquences identiques et différentes, des limites de slices et des arrêts.
 
 ### Changed
 
