@@ -29,6 +29,8 @@ Chaque frontière est exprimée dans la fréquence d'échantillonnage originale 
 
 `SlicePlaybackEngine` parcourt les slices égales selon la permutation publiée par la bande `ORDER`. Il duplique une source mono en stéréo, conserve les deux canaux d'une source stéréo et applique le ratio `fréquence source / fréquence host` avec interpolation linéaire. Play repart du premier pas ; Stop utilise un fade linéaire de 5 ms et chaque frontière de slice un fade court borné. Les voix déclenchées individuellement arrivent en M4.
 
+Comme la lecture peut être déclenchée depuis l'interface sans MIDI ni entrée audio, le VST3 annonce une queue infinie. Cette convention VST3 indique au host que le générateur doit rester appelable même lorsqu'il est momentanément silencieux.
+
 Une voix contient au minimum :
 
 - identifiant de slice ;

@@ -221,7 +221,7 @@ void SauceChopAudioProcessorEditor::timerCallback()
 {
     const auto active = processor.isPlaybackActive();
     const auto requested = processor.isPlaybackRequested();
-    waveformView.setPlaybackPosition(processor.playbackPosition(), active);
+    waveformView.setPlaybackPosition(processor.playbackSequencePosition(), active);
     sequenceView.setActiveStep(active ? processor.currentPlaybackSequenceStep() : -1);
     playbackButton.setButtonText(active || requested ? "Stop" : "Play");
 }
@@ -313,7 +313,9 @@ void SauceChopAudioProcessorEditor::togglePlayback()
 
 void SauceChopAudioProcessorEditor::refreshSequenceOrder()
 {
-    sequenceView.setOrder(processor.sequenceOrderSnapshot());
+    auto order = processor.sequenceOrderSnapshot();
+    waveformView.setSequenceOrder(order);
+    sequenceView.setOrder(std::move(order));
 }
 
 bool SauceChopAudioProcessorEditor::isSupportedAudioFile(const juce::String& path)

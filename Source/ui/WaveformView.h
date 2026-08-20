@@ -5,6 +5,7 @@
 #include <juce_gui_basics/juce_gui_basics.h>
 
 #include <memory>
+#include <vector>
 
 class WaveformView final : public juce::Component
 {
@@ -14,6 +15,7 @@ public:
     void setDropTargetActive(bool shouldBeActive);
     void setPlaybackPosition(float newPosition, bool isActive);
     void setSelectedSlice(int newSelectedSlice);
+    void setSequenceOrder(std::vector<int> newSequenceOrder);
 
     void paint(juce::Graphics& graphics) override;
 
@@ -32,4 +34,5 @@ private:
     float playbackPosition = 0.0f;
     bool playbackActive = false;
     int selectedSlice = -1;
+    std::vector<int> sequenceOrder;
 };

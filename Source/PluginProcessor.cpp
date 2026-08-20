@@ -40,6 +40,7 @@ void SauceChopAudioProcessor::prepareToPlay(const double sampleRate,
     realtimeSampleHazard.store(nullptr);
     audioIsPlaying.store(false);
     playbackProgress.store(0.0f);
+    playbackSequenceProgress.store(0.0f);
     playbackSlice.store(-1);
     playbackSequenceStep.store(-1);
 }
@@ -49,6 +50,7 @@ void SauceChopAudioProcessor::releaseResources()
     playbackEngine.setSource(nullptr);
     realtimeSampleHazard.store(nullptr);
     audioIsPlaying.store(false);
+    playbackSequenceProgress.store(0.0f);
     playbackSequenceStep.store(-1);
 }
 
@@ -141,6 +143,8 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     const auto playing = playbackEngine.isPlaying();
     audioIsPlaying.store(playing);
     playbackProgress.store(static_cast<float>(playbackEngine.progress()));
+    playbackSequenceProgress.store(
+        static_cast<float>(playbackEngine.sequenceProgressValue()));
     playbackSlice.store(playbackEngine.currentSlice());
     playbackSequenceStep.store(playbackEngine.currentSequenceStep());
 
@@ -180,7 +184,9 @@ bool SauceChopAudioProcessor::isMidiEffect() const
 
 double SauceChopAudioProcessor::getTailLengthSeconds() const
 {
-    return 0.0;
+    // The plug-in can start generating from its own UI without MIDI or input.
+    // VST3 maps an infinite tail to an always-processable generator.
+    return std::numeric_limits<double>::infinity();
 }
 
 int SauceChopAudioProcessor::getNumPrograms()
@@ -423,6 +429,7 @@ void SauceChopAudioProcessor::publishSourceSample(
     currentSourceSample = std::move(sample);
     realtimeSourceSample.store(currentSourceSample.get());
     playbackProgress.store(0.0f);
+    playbackSequenceProgress.store(0.0f);
     playbackSlice.store(-1);
     playbackSequenceStep.store(-1);
     reclaimRetiredSamples();

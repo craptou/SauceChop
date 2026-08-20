@@ -141,6 +141,9 @@ public:
             expectEquals(engine.currentSlice(), 2);
             expectEquals(engine.currentSequenceStep(), 0);
             expectWithinAbsoluteError(static_cast<float>(engine.progress()), 0.525f, 0.0001f);
+            expectWithinAbsoluteError(static_cast<float>(engine.sequenceProgressValue()),
+                                      0.025f,
+                                      0.0001f);
             expect(output.getSample(0, 8) > 0.6f);
 
             output.setSize(2, 100, false, false, true);
@@ -148,6 +151,9 @@ public:
             expectEquals(engine.currentSlice(), 0);
             expectEquals(engine.currentSequenceStep(), 1);
             expectWithinAbsoluteError(static_cast<float>(engine.progress()), 0.025f, 0.0001f);
+            expectWithinAbsoluteError(static_cast<float>(engine.sequenceProgressValue()),
+                                      0.275f,
+                                      0.0001f);
         }
 
         beginTest("Stop uses a short fade and reaches silence");

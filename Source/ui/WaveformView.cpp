@@ -1,5 +1,7 @@
 #include "WaveformView.h"
 
+#include "../model/SequenceOrder.h"
+
 #include <algorithm>
 
 namespace
@@ -68,6 +70,18 @@ void WaveformView::setSelectedSlice(const int newSelectedSlice)
     repaint();
 }
 
+void WaveformView::setSequenceOrder(std::vector<int> newSequenceOrder)
+{
+    if (!saucechop::isValidSequence(newSequenceOrder, sliceCount)
+        || sequenceOrder == newSequenceOrder)
+    {
+        return;
+    }
+
+    sequenceOrder = std::move(newSequenceOrder);
+    repaint();
+}
+
 void WaveformView::paint(juce::Graphics& graphics)
 {
     auto bounds = getLocalBounds().toFloat().reduced(1.0f);
@@ -109,6 +123,7 @@ void WaveformView::drawWaveform(juce::Graphics& graphics,
     const auto halfHeight = bounds.getHeight() * 0.45f;
     const auto width = std::max(1, static_cast<int>(bounds.getWidth()));
     const auto peakCount = static_cast<int>(sample->waveformPeaks.size());
+    const auto hasSequenceOrder = static_cast<int>(sequenceOrder.size()) == sliceCount;
 
     graphics.setColour(juce::Colours::white.withAlpha(0.08f));
     graphics.drawHorizontalLine(static_cast<int>(centreY), bounds.getX(), bounds.getRight());
@@ -117,8 +132,26 @@ void WaveformView::drawWaveform(juce::Graphics& graphics,
 
     for (int x = 0; x < width; ++x)
     {
-        const auto peakIndex = juce::jlimit(
-            0, peakCount - 1, static_cast<int>((static_cast<std::int64_t>(x) * peakCount) / width));
+        auto peakIndex = static_cast<int>((static_cast<std::int64_t>(x) * peakCount) / width);
+
+        if (hasSequenceOrder)
+        {
+            const auto sequenceStep = juce::jlimit(
+                0,
+                sliceCount - 1,
+                static_cast<int>((static_cast<std::int64_t>(x) * sliceCount) / width));
+            const auto destinationStart = sequenceStep * width / sliceCount;
+            const auto destinationEnd = (sequenceStep + 1) * width / sliceCount;
+            const auto destinationWidth = juce::jmax(1, destinationEnd - destinationStart);
+            const auto sourceSlice = sequenceOrder[static_cast<std::size_t>(sequenceStep)];
+            const auto sourceStart = sourceSlice * peakCount / sliceCount;
+            const auto sourceEnd = (sourceSlice + 1) * peakCount / sliceCount;
+            const auto sourceWidth = juce::jmax(1, sourceEnd - sourceStart);
+            peakIndex = sourceStart
+                + ((x - destinationStart) * sourceWidth) / destinationWidth;
+        }
+
+        peakIndex = juce::jlimit(0, peakCount - 1, peakIndex);
         const auto& peak = sample->waveformPeaks[static_cast<std::size_t>(peakIndex)];
         const auto minimum = juce::jlimit(-1.0f, 1.0f, peak.minimum);
         const auto maximum = juce::jlimit(-1.0f, 1.0f, peak.maximum);
@@ -164,9 +197,21 @@ void WaveformView::drawSliceSelection(juce::Graphics& graphics,
     if (selectedSlice < 0 || selectedSlice >= sliceCount)
         return;
 
+    auto selectedStep = selectedSlice;
+
+    if (static_cast<int>(sequenceOrder.size()) == sliceCount)
+    {
+        const auto match = std::find(sequenceOrder.begin(), sequenceOrder.end(), selectedSlice);
+
+        if (match == sequenceOrder.end())
+            return;
+
+        selectedStep = static_cast<int>(std::distance(sequenceOrder.begin(), match));
+    }
+
     const auto sliceWidth = bounds.getWidth() / static_cast<float>(sliceCount);
     const juce::Rectangle<float> selectedBounds{
-        bounds.getX() + sliceWidth * static_cast<float>(selectedSlice),
+        bounds.getX() + sliceWidth * static_cast<float>(selectedStep),
         bounds.getY(),
         sliceWidth,
         bounds.getHeight()};

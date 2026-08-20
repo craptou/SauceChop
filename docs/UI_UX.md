@@ -7,7 +7,7 @@
 │ SauceChop  fichier.wav       120 BPM?     ⚙              │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
-│  Forme d'onde + limites + sélection + tête de lecture      │
+│  Forme d'onde réordonnée + sélection + tête de lecture     │
 │                                                            │
 ├────────────────────────────────────────────────────────────┤
 │ [01][02][03][04][05][06][07][08] ...  ordre des slices    │

@@ -73,6 +73,11 @@ public:
         return playbackProgress.load();
     }
 
+    [[nodiscard]] float playbackSequencePosition() const noexcept
+    {
+        return playbackSequenceProgress.load();
+    }
+
     [[nodiscard]] int currentPlaybackSlice() const noexcept
     {
         return playbackSlice.load();
@@ -140,6 +145,7 @@ private:
     std::atomic<bool> playbackRequested{false};
     std::atomic<bool> audioIsPlaying{false};
     std::atomic<float> playbackProgress{0.0f};
+    std::atomic<float> playbackSequenceProgress{0.0f};
     std::atomic<int> playbackSlice{-1};
     std::atomic<int> playbackSequenceStep{-1};
 

@@ -40,11 +40,13 @@ Les changements notables de SauceChop sont consignés dans ce fichier. Le format
 
 ### Changed
 
-- rien pour le moment.
+- la grande waveform représente maintenant la chronologie réordonnée plutôt que le fichier source fixe ;
+- sa tête de lecture suit la progression de séquence, y compris après les sauts entre slices.
 
 ### Fixed
 
-- rien pour le moment.
+- déclaration d'une queue VST3 infinie pour que les hosts continuent de traiter le générateur silencieux et que Play puisse démarrer sans événement MIDI ;
+- sélection visuelle replacée à la position chronologique de la slice après réorganisation.
 
 ### Security
 
