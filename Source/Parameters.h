@@ -12,4 +12,5 @@ namespace saucechop::stateProperties
 inline constexpr auto samplePath = "samplePath";
 inline constexpr auto sampleFileSize = "sampleFileSize";
 inline constexpr auto sampleModifiedTime = "sampleModifiedTime";
+inline constexpr auto sequenceOrder = "sequenceOrder";
 } // namespace saucechop::stateProperties

@@ -2,9 +2,10 @@
 
 #include "Parameters.h"
 #include "PluginEditor.h"
+#include "model/SequenceOrder.h"
 
 #include <array>
-#include <cmath>
+#include <limits>
 
 namespace
 {
@@ -22,6 +23,9 @@ SauceChopAudioProcessor::SauceChopAudioProcessor()
     sliceCountParameter = parameterState.getRawParameterValue(
         saucechop::parameters::sliceCount);
     jassert(outputGainParameter != nullptr && sliceCountParameter != nullptr);
+
+    currentSequenceOrder = saucechop::makeIdentitySequence(16);
+    publishSequenceOrderLocked();
 }
 
 SauceChopAudioProcessor::~SauceChopAudioProcessor() = default;
@@ -31,10 +35,13 @@ void SauceChopAudioProcessor::prepareToPlay(const double sampleRate,
 {
     playbackEngine.prepare(sampleRate, maximumExpectedSamplesPerBlock);
     consumedPlaybackCommandSequence = playbackCommandSequence.load();
+    consumedSequenceRevision = std::numeric_limits<std::uint64_t>::max();
+    audioSliceCount = 0;
     realtimeSampleHazard.store(nullptr);
     audioIsPlaying.store(false);
     playbackProgress.store(0.0f);
     playbackSlice.store(-1);
+    playbackSequenceStep.store(-1);
 }
 
 void SauceChopAudioProcessor::releaseResources()
@@ -42,6 +49,7 @@ void SauceChopAudioProcessor::releaseResources()
     playbackEngine.setSource(nullptr);
     realtimeSampleHazard.store(nullptr);
     audioIsPlaying.store(false);
+    playbackSequenceStep.store(-1);
 }
 
 bool SauceChopAudioProcessor::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -68,6 +76,44 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
 
     playbackEngine.setSource(publishedSample);
 
+    const auto sliceChoice = sliceCountParameter != nullptr
+        ? juce::jlimit(0,
+                       static_cast<int>(sliceCounts.size()) - 1,
+                       juce::roundToInt(sliceCountParameter->load()))
+        : 2;
+    const auto requestedSliceCount = sliceCounts[static_cast<std::size_t>(sliceChoice)];
+    const auto sliceCountChanged = requestedSliceCount != audioSliceCount;
+
+    if (sliceCountChanged)
+    {
+        audioSliceCount = requestedSliceCount;
+        playbackEngine.setSliceCount(audioSliceCount);
+    }
+
+    const auto sequenceRevisionBefore = realtimeSequenceRevision.load();
+
+    if ((sequenceRevisionBefore & 1U) == 0U
+        && (sequenceRevisionBefore != consumedSequenceRevision || sliceCountChanged))
+    {
+        std::array<int, 32> sequenceSnapshot{};
+        const auto publishedCount = realtimeSequenceCount.load();
+
+        for (int index = 0; index < publishedCount && index < audioSliceCount; ++index)
+        {
+            sequenceSnapshot[static_cast<std::size_t>(index)] =
+                realtimeSequenceOrder[static_cast<std::size_t>(index)].load();
+        }
+
+        const auto sequenceRevisionAfter = realtimeSequenceRevision.load();
+
+        if (sequenceRevisionBefore == sequenceRevisionAfter
+            && publishedCount == audioSliceCount)
+        {
+            playbackEngine.setSequenceOrder(sequenceSnapshot.data(), publishedCount);
+            consumedSequenceRevision = sequenceRevisionAfter;
+        }
+    }
+
     PlaybackCommand command = PlaybackCommand::none;
     std::uint64_t commandSequence = 0;
     std::uint64_t verifiedSequence = 0;
@@ -89,13 +135,6 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
             playbackEngine.requestStop();
     }
 
-    const auto sliceChoice = sliceCountParameter != nullptr
-        ? juce::jlimit(0,
-                       static_cast<int>(sliceCounts.size()) - 1,
-                       juce::roundToInt(sliceCountParameter->load()))
-        : 2;
-    playbackEngine.setSliceCount(sliceCounts[static_cast<std::size_t>(sliceChoice)]);
-
     const auto outputGainDb = outputGainParameter != nullptr ? outputGainParameter->load() : 0.0f;
     playbackEngine.process(buffer, juce::Decibels::decibelsToGain(outputGainDb));
 
@@ -103,6 +142,7 @@ void SauceChopAudioProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     audioIsPlaying.store(playing);
     playbackProgress.store(static_cast<float>(playbackEngine.progress()));
     playbackSlice.store(playbackEngine.currentSlice());
+    playbackSequenceStep.store(playbackEngine.currentSequenceStep());
 
     if (!playing && playbackRequested.load())
         playbackRequested.store(false);
@@ -180,6 +220,9 @@ void SauceChopAudioProcessor::getStateInformation(juce::MemoryBlock& destination
     state.setProperty(saucechop::stateProperties::sampleModifiedTime,
                       reference.modifiedTimeMilliseconds,
                       nullptr);
+    state.setProperty(saucechop::stateProperties::sequenceOrder,
+                      saucechop::serialiseSequence(sequenceOrderSnapshot()),
+                      nullptr);
 
     if (auto xml = state.createXml())
         copyXmlToBinary(*xml, destinationData);
@@ -200,11 +243,31 @@ void SauceChopAudioProcessor::setStateInformation(const void* data, const int si
                 restoredState.getProperty(saucechop::stateProperties::sampleFileSize));
             restoredReference.modifiedTimeMilliseconds = static_cast<std::int64_t>(
                 restoredState.getProperty(saucechop::stateProperties::sampleModifiedTime));
+            const auto restoredSequenceText = restoredState
+                                                  .getProperty(
+                                                      saucechop::stateProperties::sequenceOrder)
+                                                  .toString();
 
             restoredState.removeProperty(saucechop::stateProperties::samplePath, nullptr);
             restoredState.removeProperty(saucechop::stateProperties::sampleFileSize, nullptr);
             restoredState.removeProperty(saucechop::stateProperties::sampleModifiedTime, nullptr);
+            restoredState.removeProperty(saucechop::stateProperties::sequenceOrder, nullptr);
             parameterState.replaceState(restoredState);
+
+            const auto restoredSliceChoice = sliceCountParameter != nullptr
+                ? juce::jlimit(0,
+                               static_cast<int>(sliceCounts.size()) - 1,
+                               juce::roundToInt(sliceCountParameter->load()))
+                : 2;
+            const auto restoredSliceCount =
+                sliceCounts[static_cast<std::size_t>(restoredSliceChoice)];
+            auto restoredSequence =
+                saucechop::parseSequence(restoredSequenceText, restoredSliceCount);
+
+            if (restoredSequence.empty())
+                restoredSequence = saucechop::makeIdentitySequence(restoredSliceCount);
+
+            setSequenceOrder(std::move(restoredSequence), false);
             publishSourceSample(nullptr);
             setSampleReference(restoredReference);
 
@@ -258,6 +321,45 @@ void SauceChopAudioProcessor::stopPlayback() noexcept
     playbackRequested.store(false);
     pendingPlaybackCommand.store(PlaybackCommand::stop);
     playbackCommandSequence.fetch_add(1);
+}
+
+void SauceChopAudioProcessor::setSequenceSliceCount(const int sliceCount)
+{
+    if (sliceCount != 4 && sliceCount != 8 && sliceCount != 16 && sliceCount != 32)
+        return;
+
+    const auto currentOrder = sequenceOrderSnapshot();
+
+    if (static_cast<int>(currentOrder.size()) == sliceCount)
+        return;
+
+    stopPlayback();
+    setSequenceOrder(saucechop::makeIdentitySequence(sliceCount), true);
+}
+
+void SauceChopAudioProcessor::moveSequenceStep(const int fromIndex, const int toIndex)
+{
+    const auto currentOrder = sequenceOrderSnapshot();
+    const auto movedOrder = saucechop::moveSequenceItem(currentOrder, fromIndex, toIndex);
+
+    if (movedOrder != currentOrder)
+        setSequenceOrder(movedOrder, true);
+}
+
+void SauceChopAudioProcessor::resetSequenceOrder()
+{
+    const auto currentOrder = sequenceOrderSnapshot();
+    const auto identity = saucechop::makeIdentitySequence(
+        static_cast<int>(currentOrder.size()));
+
+    if (currentOrder != identity)
+        setSequenceOrder(identity, true);
+}
+
+std::vector<int> SauceChopAudioProcessor::sequenceOrderSnapshot() const
+{
+    const juce::ScopedLock lock(sequenceOrderLock);
+    return currentSequenceOrder;
 }
 
 juce::String SauceChopAudioProcessor::sampleLoadMessage() const
@@ -322,6 +424,7 @@ void SauceChopAudioProcessor::publishSourceSample(
     realtimeSourceSample.store(currentSourceSample.get());
     playbackProgress.store(0.0f);
     playbackSlice.store(-1);
+    playbackSequenceStep.store(-1);
     reclaimRetiredSamples();
 }
 
@@ -333,6 +436,38 @@ void SauceChopAudioProcessor::reclaimRetiredSamples()
                   {
                       return sample.get() != protectedSample;
                   });
+}
+
+void SauceChopAudioProcessor::setSequenceOrder(std::vector<int> order,
+                                               const bool notifyListeners)
+{
+    const auto count = static_cast<int>(order.size());
+
+    if (count > static_cast<int>(realtimeSequenceOrder.size())
+        || !saucechop::isValidSequence(order, count))
+    {
+        return;
+    }
+
+    {
+        const juce::ScopedLock lock(sequenceOrderLock);
+        currentSequenceOrder = std::move(order);
+        publishSequenceOrderLocked();
+    }
+
+    if (notifyListeners)
+        sendChangeMessage();
+}
+
+void SauceChopAudioProcessor::publishSequenceOrderLocked()
+{
+    realtimeSequenceRevision.fetch_add(1);
+    realtimeSequenceCount.store(static_cast<int>(currentSequenceOrder.size()));
+
+    for (std::size_t index = 0; index < currentSequenceOrder.size(); ++index)
+        realtimeSequenceOrder[index].store(currentSequenceOrder[index]);
+
+    realtimeSequenceRevision.fetch_add(1);
 }
 
 juce::AudioProcessorValueTreeState::ParameterLayout

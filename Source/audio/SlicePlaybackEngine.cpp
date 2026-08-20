@@ -1,14 +1,19 @@
 #include "SlicePlaybackEngine.h"
 
 #include <algorithm>
-#include <cmath>
 
 namespace saucechop
 {
 namespace
 {
 constexpr double playbackFadeSeconds = 0.005;
+constexpr double sliceFadeSeconds = 0.003;
 constexpr double gainSmoothingSeconds = 0.02;
+}
+
+SlicePlaybackEngine::SlicePlaybackEngine() noexcept
+{
+    resetIdentityOrder();
 }
 
 void SlicePlaybackEngine::prepare(const double newHostSampleRate,
@@ -34,10 +39,45 @@ void SlicePlaybackEngine::setSource(const SourceSample* const newSource) noexcep
 
 void SlicePlaybackEngine::setSliceCount(const int newSliceCount) noexcept
 {
-    sliceCount = juce::jlimit(1, 64, newSliceCount);
+    const auto sanitisedCount = juce::jlimit(1, static_cast<int>(sequenceOrder.size()),
+                                             newSliceCount);
 
-    if (source != nullptr)
-        activeSlice = sliceForPosition(sourcePosition, source->audio.getNumSamples());
+    if (sliceCount == sanitisedCount)
+        return;
+
+    sliceCount = sanitisedCount;
+    resetIdentityOrder();
+    stopImmediately();
+}
+
+void SlicePlaybackEngine::setSequenceOrder(const int* const newOrder,
+                                           const int orderSize) noexcept
+{
+    if (newOrder == nullptr || orderSize != sliceCount)
+        return;
+
+    std::array<bool, 32> found{};
+
+    for (int index = 0; index < orderSize; ++index)
+    {
+        const auto slice = newOrder[index];
+
+        if (slice < 0 || slice >= sliceCount || found[static_cast<std::size_t>(slice)])
+            return;
+
+        found[static_cast<std::size_t>(slice)] = true;
+    }
+
+    for (int index = 0; index < orderSize; ++index)
+        sequenceOrder[static_cast<std::size_t>(index)] = newOrder[index];
+
+    if (playing)
+    {
+        const auto* begin = sequenceOrder.data();
+        const auto* end = begin + sliceCount;
+        const auto* match = std::find(begin, end, activeSlice);
+        sequenceStep = match != end ? static_cast<int>(std::distance(begin, match)) : 0;
+    }
 }
 
 void SlicePlaybackEngine::start() noexcept
@@ -51,7 +91,10 @@ void SlicePlaybackEngine::start() noexcept
 
     sourcePosition = 0.0;
     playbackProgress = 0.0;
-    activeSlice = 0;
+    sequenceProgress = 0.0;
+    sequenceStep = 0;
+    activeSlice = sequenceOrder.front();
+    sourcePosition = sliceStartFrame(activeSlice, source->audio.getNumSamples());
     playing = true;
     stopping = false;
     playbackEnvelope.setCurrentAndTargetValue(0.0f);
@@ -71,7 +114,9 @@ void SlicePlaybackEngine::stopImmediately() noexcept
 {
     sourcePosition = 0.0;
     playbackProgress = 0.0;
+    sequenceProgress = 0.0;
     activeSlice = -1;
+    sequenceStep = -1;
     playing = false;
     stopping = false;
     playbackEnvelope.setCurrentAndTargetValue(0.0f);
@@ -98,29 +143,53 @@ void SlicePlaybackEngine::process(juce::AudioBuffer<float>& output,
     }
 
     const auto sourceFramesPerOutputFrame = source->originalSampleRateHz / hostSampleRate;
-    const auto tailFadeFrames = juce::jmax(1.0, source->originalSampleRateHz * playbackFadeSeconds);
+    const auto sliceFadeFrames = juce::jmax(1.0, source->originalSampleRateHz * sliceFadeSeconds);
 
     for (int outputFrame = 0; outputFrame < output.getNumSamples(); ++outputFrame)
     {
-        if (sourcePosition >= static_cast<double>(totalFrames))
+        while (sequenceStep >= 0 && sequenceStep < sliceCount)
+        {
+            activeSlice = sequenceOrder[static_cast<std::size_t>(sequenceStep)];
+            const auto startFrame = sliceStartFrame(activeSlice, totalFrames);
+            const auto endFrame = sliceEndFrame(activeSlice, totalFrames);
+
+            if (endFrame > startFrame && sourcePosition < static_cast<double>(endFrame))
+                break;
+
+            const auto overshoot = endFrame > startFrame
+                ? juce::jmax(0.0, sourcePosition - static_cast<double>(endFrame))
+                : 0.0;
+            ++sequenceStep;
+
+            if (sequenceStep < sliceCount)
+            {
+                activeSlice = sequenceOrder[static_cast<std::size_t>(sequenceStep)];
+                sourcePosition = sliceStartFrame(activeSlice, totalFrames) + overshoot;
+            }
+        }
+
+        if (sequenceStep < 0 || sequenceStep >= sliceCount)
         {
             playing = false;
             stopping = false;
-            activeSlice = sliceCount - 1;
-            playbackProgress = 1.0;
+            sequenceProgress = 1.0;
             playbackEnvelope.setCurrentAndTargetValue(0.0f);
             break;
         }
 
+        const auto sliceStart = sliceStartFrame(activeSlice, totalFrames);
+        const auto sliceEnd = sliceEndFrame(activeSlice, totalFrames);
+
         const auto firstFrame = juce::jlimit(0, totalFrames - 1,
                                              static_cast<int>(sourcePosition));
-        const auto secondFrame = juce::jmin(firstFrame + 1, totalFrames - 1);
+        const auto secondFrame = juce::jmin(firstFrame + 1, sliceEnd - 1);
         const auto fraction = static_cast<float>(sourcePosition - firstFrame);
-        const auto framesRemaining = static_cast<double>(totalFrames) - sourcePosition;
-        const auto naturalTailGain = static_cast<float>(
-            juce::jlimit(0.0, 1.0, framesRemaining / tailFadeFrames));
+        const auto framesFromStart = sourcePosition - static_cast<double>(sliceStart);
+        const auto framesRemaining = static_cast<double>(sliceEnd) - sourcePosition;
+        const auto sliceGain = static_cast<float>(juce::jlimit(
+            0.0, 1.0, std::min(framesFromStart, framesRemaining) / sliceFadeFrames));
         const auto gain = playbackEnvelope.getNextValue() * outputGain.getNextValue()
-            * naturalTailGain;
+            * sliceGain;
 
         for (int outputChannel = 0; outputChannel < outputChannels; ++outputChannel)
         {
@@ -135,7 +204,34 @@ void SlicePlaybackEngine::process(juce::AudioBuffer<float>& output,
         sourcePosition += sourceFramesPerOutputFrame;
         playbackProgress = juce::jlimit(
             0.0, 1.0, sourcePosition / static_cast<double>(totalFrames));
-        activeSlice = sliceForPosition(sourcePosition, totalFrames);
+        const auto localSliceProgress = juce::jlimit(
+            0.0,
+            1.0,
+            (sourcePosition - sliceStart) / static_cast<double>(sliceEnd - sliceStart));
+        sequenceProgress = (static_cast<double>(sequenceStep) + localSliceProgress)
+            / static_cast<double>(sliceCount);
+
+        if (sourcePosition >= static_cast<double>(sliceEnd))
+        {
+            const auto overshoot = sourcePosition - static_cast<double>(sliceEnd);
+            ++sequenceStep;
+
+            if (sequenceStep >= sliceCount)
+            {
+                playing = false;
+                stopping = false;
+                playbackProgress = static_cast<double>(sliceEnd) / totalFrames;
+                sequenceProgress = 1.0;
+                playbackEnvelope.setCurrentAndTargetValue(0.0f);
+                break;
+            }
+
+            activeSlice = sequenceOrder[static_cast<std::size_t>(sequenceStep)];
+            sourcePosition = sliceStartFrame(activeSlice, totalFrames) + overshoot;
+            playbackProgress = juce::jlimit(
+                0.0, 1.0, sourcePosition / static_cast<double>(totalFrames));
+            sequenceProgress = static_cast<double>(sequenceStep) / sliceCount;
+        }
 
         if (stopping && !playbackEnvelope.isSmoothing()
             && playbackEnvelope.getCurrentValue() <= 0.0f)
@@ -148,17 +244,20 @@ void SlicePlaybackEngine::process(juce::AudioBuffer<float>& output,
     }
 }
 
-int SlicePlaybackEngine::sliceForPosition(const double position,
-                                          const int totalFrames) const noexcept
+int SlicePlaybackEngine::sliceStartFrame(const int slice, const int totalFrames) const noexcept
 {
-    if (totalFrames <= 0)
-        return -1;
-
-    const auto frame = static_cast<std::int64_t>(juce::jlimit(
-        0.0, static_cast<double>(totalFrames - 1), std::floor(position)));
-    const auto numerator = (frame + 1) * static_cast<std::int64_t>(sliceCount) - 1;
-    return juce::jlimit(0,
-                        sliceCount - 1,
-                        static_cast<int>(numerator / totalFrames));
+    return static_cast<int>((static_cast<std::int64_t>(slice) * totalFrames) / sliceCount);
 }
+
+int SlicePlaybackEngine::sliceEndFrame(const int slice, const int totalFrames) const noexcept
+{
+    return static_cast<int>((static_cast<std::int64_t>(slice + 1) * totalFrames) / sliceCount);
+}
+
+void SlicePlaybackEngine::resetIdentityOrder() noexcept
+{
+    for (std::size_t index = 0; index < sequenceOrder.size(); ++index)
+        sequenceOrder[index] = static_cast<int>(index);
+}
+
 } // namespace saucechop

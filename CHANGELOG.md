@@ -32,6 +32,11 @@ Les changements notables de SauceChop sont consignés dans ce fichier. Le format
 - publication du sample par pointeur protégé afin que sa destruction reste hors du thread audio ;
 - repère de lecture animé sur la waveform et suivi de la slice active ;
 - tests du moteur à fréquences identiques et différentes, des limites de slices et des arrêts.
+- bande d'ordre numérotée avec sélection, étape de lecture active et prévisualisation du déplacement ;
+- réorganisation des slices par glisser-déposer et commande de remise à l'ordre source ;
+- lecture audio suivant la permutation choisie, avec transitions bornées entre slices ;
+- sauvegarde et validation de l'ordre des slices dans l'état du plug-in ;
+- tests du modèle de permutation et de la lecture réordonnée à 44,1/48/96 kHz.
 
 ### Changed
 

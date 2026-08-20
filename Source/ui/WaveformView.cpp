@@ -27,6 +27,10 @@ void WaveformView::setSliceCount(const int newSliceCount)
         return;
 
     sliceCount = sanitisedCount;
+
+    if (selectedSlice >= sliceCount)
+        selectedSlice = -1;
+
     repaint();
 }
 
@@ -51,6 +55,19 @@ void WaveformView::setPlaybackPosition(const float newPosition, const bool isAct
     repaint();
 }
 
+void WaveformView::setSelectedSlice(const int newSelectedSlice)
+{
+    const auto sanitisedSlice = newSelectedSlice >= 0 && newSelectedSlice < sliceCount
+        ? newSelectedSlice
+        : -1;
+
+    if (selectedSlice == sanitisedSlice)
+        return;
+
+    selectedSlice = sanitisedSlice;
+    repaint();
+}
+
 void WaveformView::paint(juce::Graphics& graphics)
 {
     auto bounds = getLocalBounds().toFloat().reduced(1.0f);
@@ -61,6 +78,7 @@ void WaveformView::paint(juce::Graphics& graphics)
     graphics.drawRoundedRectangle(bounds, 12.0f, dropTargetActive ? 2.0f : 1.0f);
 
     bounds = bounds.reduced(18.0f);
+    drawSliceSelection(graphics, bounds, false);
 
     if (sample == nullptr || sample->waveformPeaks.empty())
         drawPlaceholder(graphics, bounds);
@@ -68,6 +86,7 @@ void WaveformView::paint(juce::Graphics& graphics)
         drawWaveform(graphics, bounds);
 
     drawSliceGrid(graphics, bounds);
+    drawSliceSelection(graphics, bounds, true);
     drawPlayhead(graphics, bounds);
 }
 
@@ -136,4 +155,26 @@ void WaveformView::drawPlayhead(juce::Graphics& graphics,
     juce::Path marker;
     marker.addTriangle(x - 5.0f, bounds.getY(), x + 5.0f, bounds.getY(), x, bounds.getY() + 7.0f);
     graphics.fillPath(marker);
+}
+
+void WaveformView::drawSliceSelection(juce::Graphics& graphics,
+                                      const juce::Rectangle<float> bounds,
+                                      const bool drawOutline) const
+{
+    if (selectedSlice < 0 || selectedSlice >= sliceCount)
+        return;
+
+    const auto sliceWidth = bounds.getWidth() / static_cast<float>(sliceCount);
+    const juce::Rectangle<float> selectedBounds{
+        bounds.getX() + sliceWidth * static_cast<float>(selectedSlice),
+        bounds.getY(),
+        sliceWidth,
+        bounds.getHeight()};
+
+    graphics.setColour(accentColour.withAlpha(drawOutline ? 0.82f : 0.10f));
+
+    if (drawOutline)
+        graphics.drawRect(selectedBounds, 2.0f);
+    else
+        graphics.fillRect(selectedBounds);
 }

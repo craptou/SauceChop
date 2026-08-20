@@ -53,6 +53,27 @@ SauceChopAudioProcessorEditor::SauceChopAudioProcessorEditor(
     };
     addAndMakeVisible(playbackButton);
 
+    resetOrderButton.onClick = [this]
+    {
+        processor.resetSequenceOrder();
+    };
+    addAndMakeVisible(resetOrderButton);
+
+    sequenceLabel.setText("ORDER", juce::dontSendNotification);
+    sequenceLabel.setColour(juce::Label::textColourId, secondaryTextColour);
+    sequenceLabel.setJustificationType(juce::Justification::centredLeft);
+    addAndMakeVisible(sequenceLabel);
+
+    sequenceView.onSelectionChanged = [this](const int sourceSlice)
+    {
+        waveformView.setSelectedSlice(sourceSlice);
+    };
+    sequenceView.onOrderChanged = [this](const int fromIndex, const int toIndex)
+    {
+        processor.moveSequenceStep(fromIndex, toIndex);
+    };
+    addAndMakeVisible(sequenceView);
+
     outputGainLabel.setText("OUTPUT", juce::dontSendNotification);
     outputGainLabel.setJustificationType(juce::Justification::centred);
     outputGainLabel.setColour(juce::Label::textColourId, secondaryTextColour);
@@ -91,6 +112,7 @@ SauceChopAudioProcessorEditor::SauceChopAudioProcessorEditor(
     processor.addChangeListener(this);
     refreshSampleState();
     updateSliceCount();
+    refreshSequenceOrder();
     startTimerHz(30);
 
     setResizable(true, true);
@@ -128,7 +150,14 @@ void SauceChopAudioProcessorEditor::resized()
     area.removeFromTop(8);
 
     auto footer = area.removeFromBottom(136);
-    area.removeFromBottom(16);
+    area.removeFromBottom(12);
+    auto sequenceArea = area.removeFromBottom(54);
+    sequenceLabel.setBounds(sequenceArea.removeFromLeft(62));
+    resetOrderButton.setBounds(sequenceArea.removeFromRight(96).reduced(4, 10));
+    sequenceArea.removeFromRight(8);
+    sequenceView.setBounds(sequenceArea);
+
+    area.removeFromBottom(12);
     waveformView.setBounds(area);
 
     auto controls = footer.withSizeKeepingCentre(460, footer.getHeight());
@@ -150,7 +179,10 @@ void SauceChopAudioProcessorEditor::resized()
 void SauceChopAudioProcessorEditor::changeListenerCallback(juce::ChangeBroadcaster* source)
 {
     if (source == &processor)
+    {
         refreshSampleState();
+        refreshSequenceOrder();
+    }
 }
 
 bool SauceChopAudioProcessorEditor::isInterestedInFileDrag(const juce::StringArray& files)
@@ -190,6 +222,7 @@ void SauceChopAudioProcessorEditor::timerCallback()
     const auto active = processor.isPlaybackActive();
     const auto requested = processor.isPlaybackRequested();
     waveformView.setPlaybackPosition(processor.playbackPosition(), active);
+    sequenceView.setActiveStep(active ? processor.currentPlaybackSequenceStep() : -1);
     playbackButton.setButtonText(active || requested ? "Stop" : "Play");
 }
 
@@ -256,12 +289,16 @@ void SauceChopAudioProcessorEditor::refreshSampleState()
     playbackButton.setEnabled(sample != nullptr
                               && processor.sampleLoadState()
                                   == SauceChopAudioProcessor::SampleLoadState::ready);
+    resetOrderButton.setEnabled(sample != nullptr);
 }
 
 void SauceChopAudioProcessorEditor::updateSliceCount()
 {
     const auto selectedText = sliceCountBox.getText();
-    waveformView.setSliceCount(selectedText.isNotEmpty() ? selectedText.getIntValue() : 16);
+    const auto count = selectedText.isNotEmpty() ? selectedText.getIntValue() : 16;
+    waveformView.setSliceCount(count);
+    processor.setSequenceSliceCount(count);
+    refreshSequenceOrder();
 }
 
 void SauceChopAudioProcessorEditor::togglePlayback()
@@ -272,6 +309,11 @@ void SauceChopAudioProcessorEditor::togglePlayback()
         processor.startPlayback();
 
     timerCallback();
+}
+
+void SauceChopAudioProcessorEditor::refreshSequenceOrder()
+{
+    sequenceView.setOrder(processor.sequenceOrderSnapshot());
 }
 
 bool SauceChopAudioProcessorEditor::isSupportedAudioFile(const juce::String& path)

@@ -27,7 +27,7 @@ Chaque frontière est exprimée dans la fréquence d'échantillonnage originale 
 
 ### Prototype M3 actuel
 
-`SlicePlaybackEngine` parcourt actuellement les slices égales dans l'ordre source avec une seule position de lecture. Il duplique une source mono en stéréo, conserve les deux canaux d'une source stéréo et applique le ratio `fréquence source / fréquence host` avec interpolation linéaire. Play repart de zéro ; Stop et les extrémités utilisent un fade linéaire de 5 ms. Le réarrangement et les voix déclenchées individuellement sont les prochaines extensions de M3/M4.
+`SlicePlaybackEngine` parcourt les slices égales selon la permutation publiée par la bande `ORDER`. Il duplique une source mono en stéréo, conserve les deux canaux d'une source stéréo et applique le ratio `fréquence source / fréquence host` avec interpolation linéaire. Play repart du premier pas ; Stop utilise un fade linéaire de 5 ms et chaque frontière de slice un fade court borné. Les voix déclenchées individuellement arrivent en M4.
 
 Une voix contient au minimum :
 

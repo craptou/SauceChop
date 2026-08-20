@@ -50,10 +50,14 @@ target_sources(SauceChop
         Source/files/SourceSample.h
         Source/model/SliceMath.cpp
         Source/model/SliceMath.h
+        Source/model/SequenceOrder.cpp
+        Source/model/SequenceOrder.h
         Source/model/WaveformPeaks.cpp
         Source/model/WaveformPeaks.h
         Source/ui/WaveformView.cpp
-        Source/ui/WaveformView.h)
+        Source/ui/WaveformView.h
+        Source/ui/SequenceView.cpp
+        Source/ui/SequenceView.h)
 
 target_compile_definitions(SauceChop
     PUBLIC
@@ -86,10 +90,14 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES
     Source/files/SourceSample.h
     Source/model/SliceMath.cpp
     Source/model/SliceMath.h
+    Source/model/SequenceOrder.cpp
+    Source/model/SequenceOrder.h
     Source/model/WaveformPeaks.cpp
     Source/model/WaveformPeaks.h
     Source/ui/WaveformView.cpp
-    Source/ui/WaveformView.h)
+    Source/ui/WaveformView.h
+    Source/ui/SequenceView.cpp
+    Source/ui/SequenceView.h)
 
 if(SAUCECHOP_BUILD_TESTS)
     include(CTest)
@@ -102,6 +110,7 @@ if(SAUCECHOP_BUILD_TESTS)
             Tests/Main.cpp
             Tests/SlicePlaybackEngineTests.cpp
             Tests/SampleFileReaderTests.cpp
+            Tests/SequenceOrderTests.cpp
             Tests/SliceMathTests.cpp
             Tests/WaveformPeaksTests.cpp
             Source/files/SampleFileReader.cpp
@@ -111,6 +120,8 @@ if(SAUCECHOP_BUILD_TESTS)
             Source/audio/SlicePlaybackEngine.h
             Source/model/SliceMath.cpp
             Source/model/SliceMath.h
+            Source/model/SequenceOrder.cpp
+            Source/model/SequenceOrder.h
             Source/model/WaveformPeaks.cpp
             Source/model/WaveformPeaks.h)
 

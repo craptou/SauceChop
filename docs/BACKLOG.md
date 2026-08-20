@@ -37,10 +37,10 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 - `UI-001` ✅ Construire un cache min/max de waveform.
 - `UI-002` ✅ Dessiner la forme d'onde depuis un cache borné.
 - `SLICE-001` ✅ Calculer 4/8/16/32 frontières égales.
-- `SLICE-002` Afficher limites, numéros et sélection.
-- `SLICE-003` Implémenter la bande d'ordre.
-- `SLICE-004` Implémenter le drag-reorder avec prévisualisation.
-- `SLICE-005` Implémenter reset de l'ordre.
+- `SLICE-002` ✅ Afficher limites, numéros et sélection.
+- `SLICE-003` ✅ Implémenter la bande d'ordre.
+- `SLICE-004` ✅ Implémenter le drag-reorder avec prévisualisation.
+- `SLICE-005` ✅ Implémenter reset de l'ordre.
 
 ## EPIC-05 — Moteur temps réel
 
@@ -60,7 +60,7 @@ Chaque ligne peut devenir une issue. Les identifiants restent stables même si l
 - `MIDI-002` Respecter les offsets d'événements dans le bloc.
 - `MIDI-003` Implémenter One Shot.
 - `MIDI-004` Implémenter Gate et Note Off.
-- `SEQ-001` ✅ Implémenter lecture interne de l'ordre source.
+- `SEQ-001` ✅ Implémenter la lecture interne de l'ordre réorganisé.
 - `SEQ-002` ✅ Implémenter Play/Stop et reprise déterministe.
 
 ## EPIC-07 — Création et historique

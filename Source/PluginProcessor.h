@@ -6,6 +6,7 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 
 #include <atomic>
+#include <array>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -51,6 +52,11 @@ public:
     void loadSampleAsync(const juce::File& file);
     void startPlayback() noexcept;
     void stopPlayback() noexcept;
+    void setSequenceSliceCount(int sliceCount);
+    void moveSequenceStep(int fromIndex, int toIndex);
+    void resetSequenceOrder();
+
+    [[nodiscard]] std::vector<int> sequenceOrderSnapshot() const;
 
     [[nodiscard]] bool isPlaybackRequested() const noexcept
     {
@@ -70,6 +76,11 @@ public:
     [[nodiscard]] int currentPlaybackSlice() const noexcept
     {
         return playbackSlice.load();
+    }
+
+    [[nodiscard]] int currentPlaybackSequenceStep() const noexcept
+    {
+        return playbackSequenceStep.load();
     }
 
     [[nodiscard]] std::shared_ptr<const saucechop::SourceSample>
@@ -109,6 +120,8 @@ private:
     void handleSampleLoadResult(saucechop::SampleLoadResult result);
     void publishSourceSample(std::shared_ptr<const saucechop::SourceSample> sample);
     void reclaimRetiredSamples();
+    void setSequenceOrder(std::vector<int> order, bool notifyListeners);
+    void publishSequenceOrderLocked();
 
     juce::AudioProcessorValueTreeState parameterState;
     const std::atomic<float>* outputGainParameter = nullptr;
@@ -128,6 +141,15 @@ private:
     std::atomic<bool> audioIsPlaying{false};
     std::atomic<float> playbackProgress{0.0f};
     std::atomic<int> playbackSlice{-1};
+    std::atomic<int> playbackSequenceStep{-1};
+
+    mutable juce::CriticalSection sequenceOrderLock;
+    std::vector<int> currentSequenceOrder;
+    std::array<std::atomic<int>, 32> realtimeSequenceOrder{};
+    std::atomic<int> realtimeSequenceCount{16};
+    std::atomic<std::uint64_t> realtimeSequenceRevision{0};
+    std::uint64_t consumedSequenceRevision = 0;
+    int audioSliceCount = 0;
 
     std::atomic<SampleLoadState> currentLoadState{SampleLoadState::empty};
     mutable juce::CriticalSection loadMessageLock;

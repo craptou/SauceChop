@@ -131,6 +131,8 @@ struct ProjectState
 
 La représentation sérialisée sera un `juce::ValueTree`. Le moteur audio utilise toutefois un snapshot compact et immuable, adapté à la lecture temps réel.
 
+Depuis M3, `sequenceOrder` est validé comme une permutation exacte puis publié dans un tableau fixe de 32 atomiques avec un compteur de révision. Le callback n'adopte le tableau que si la révision est stable avant et après sa copie ; une écriture UI concurrente est simplement reprise au bloc suivant.
+
 ## Frontière temps réel
 
 ### Thread audio

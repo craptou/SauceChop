@@ -81,4 +81,4 @@ Pour tester dans FL Studio, copier le bundle `SauceChop.vst3` dans `C:\Program F
 
 ## Statut
 
-Jalon M3 en cours : WAV, AIFF et MP3 mono ou stéréo peuvent être chargés puis lus avec adaptation à la fréquence du host. Les commandes Play/Stop utilisent des fades anti-clic, le gain est lissé et un repère suit la lecture à travers les divisions 4/8/16/32. La prochaine tranche de M3 ajoute la bande d'ordre et le réarrangement des slices.
+Jalon M3 terminé : WAV, AIFF et MP3 mono ou stéréo peuvent être chargés puis lus avec adaptation à la fréquence du host. Les commandes Play/Stop utilisent des fades anti-clic, le gain est lissé et un repère suit la lecture. La bande `ORDER` permet de sélectionner et réordonner les slices par glisser-déposer ; cette permutation est réellement jouée et restaurée avec la session.

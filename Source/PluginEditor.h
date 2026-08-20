@@ -1,6 +1,7 @@
 #pragma once
 
 #include "PluginProcessor.h"
+#include "ui/SequenceView.h"
 #include "ui/WaveformView.h"
 
 #include <juce_gui_basics/juce_gui_basics.h>
@@ -29,6 +30,7 @@ private:
     void refreshSampleState();
     void updateSliceCount();
     void togglePlayback();
+    void refreshSequenceOrder();
     [[nodiscard]] static bool isSupportedAudioFile(const juce::String& path);
 
     SauceChopAudioProcessor& processor;
@@ -38,11 +40,14 @@ private:
     juce::Label sampleInfoLabel;
     juce::Label outputGainLabel;
     juce::Label sliceCountLabel;
+    juce::Label sequenceLabel;
     juce::Slider outputGainSlider;
     juce::ComboBox sliceCountBox;
     juce::TextButton loadSampleButton{"Load sample"};
     juce::TextButton playbackButton{"Play"};
+    juce::TextButton resetOrderButton{"Reset order"};
     WaveformView waveformView;
+    SequenceView sequenceView;
     std::unique_ptr<juce::FileChooser> fileChooser;
 
     using SliderAttachment = juce::AudioProcessorValueTreeState::SliderAttachment;
